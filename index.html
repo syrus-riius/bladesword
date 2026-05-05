@@ -1,0 +1,5497 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>일기토 v0.3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=Noto+Sans+KR:wght@400;500;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f1ead9;
+  --surface: #faf6ec;
+  --surface-deep: #e8dec5;
+  --line: #1a1410;
+  --line-soft: #b8a884;
+
+  --text-1: #1a1410;
+  --text-2: #443c33;
+  --text-3: #6a5d4d;
+  --text-inv: #faf6ec;
+
+  --enemy: #b8232f;
+  --enemy-deep: #7a0e16;
+  --enemy-soft: #f5e3e3;
+  --enemy-tint: rgba(184, 35, 47, 0.06);
+
+  --player: #2c4a6b;
+  --player-deep: #1a2f47;
+  --player-soft: #e3eaf2;
+  --player-tint: rgba(44, 74, 107, 0.06);
+
+  --gold: #b8862c;
+  --gold-deep: #7a5a18;
+  --gold-soft: #f0e3c5;
+
+  --green: #5a7042;
+  --green-deep: #3d4d2e;
+  --sepia: #6b4423;
+  --sepia-soft: #d9c5a8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 0.10 0'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>");
+  opacity: 0.4; mix-blend-mode: multiply;
+}
+
+/* All screens fit iPhone 17 Pro logical viewport (402×874pt). */
+.screen {
+  display: none;
+  position: relative;
+  z-index: 3;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 10px 10px;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+.screen.active { display: flex; flex-direction: column; }
+
+/* PRIMITIVES */
+.label-en {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.label-ko {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+/* TITLE BAR */
+.title-bar {
+  text-align: center;
+  padding: 6px 0 9px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  flex-shrink: 0;
+}
+.title-bar::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  width: 44px;
+  height: 2px;
+  background: var(--enemy);
+  transform: translateX(-50%);
+}
+.title-main {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: 0.4em;
+  line-height: 1;
+  color: var(--text-1);
+  padding-left: 0.4em;
+}
+.title-en {
+  margin-top: 4px;
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+
+/* SECTION LABELS */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+.section-label .ko {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: 0.06em;
+}
+.section-label .en {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line-soft);
+}
+
+/* Matchup table toggle button in section-label */
+.matchup-btn {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: var(--surface);
+  color: var(--text-1);
+  border: 1px solid var(--line);
+  padding: 3px 9px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 4px;
+  order: 99;
+  transition: all 0.15s;
+}
+.matchup-btn::before {
+  content: '⚔ ';
+  font-size: 11px;
+}
+.matchup-btn:hover {
+  background: var(--line);
+  color: var(--text-inv);
+}
+
+/* Matchup modal table */
+.matchup-legend {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  font-size: 9.5px;
+  color: var(--text-2);
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.matchup-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.matchup-legend .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--line);
+}
+.matchup-legend .dot.win { background: var(--gold); }
+.matchup-legend .dot.lose { background: var(--enemy-soft); }
+.matchup-legend .dot.mut { background: var(--enemy); }
+.matchup-legend .dot.none { background: var(--surface-deep); }
+
+.matchup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.5px;
+  font-family: 'Noto Sans KR', sans-serif;
+  table-layout: fixed;
+}
+.matchup-table th, .matchup-table td {
+  border: 1px solid var(--line);
+  padding: 4px 2px;
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.matchup-table thead th {
+  background: var(--line);
+  color: var(--surface);
+  font-size: 9px;
+  letter-spacing: 0;
+  font-weight: 700;
+}
+.matchup-table thead .corner {
+  background: var(--surface-deep);
+  color: var(--text-2);
+  position: relative;
+  font-size: 8px;
+  padding: 2px;
+}
+.matchup-table thead .corner-me,
+.matchup-table thead .corner-en {
+  display: block;
+  text-align: left;
+  padding-left: 6px;
+}
+.matchup-table thead .corner-me {
+  text-align: right;
+  padding-right: 4px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1px;
+  margin-bottom: 1px;
+}
+.matchup-table tbody th {
+  background: var(--surface-deep);
+  color: var(--text-1);
+  font-size: 9px;
+  font-weight: 700;
+}
+.matchup-table td.m {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 9.5px;
+  font-weight: 700;
+  cursor: help;
+}
+.matchup-table td.win {
+  background: var(--gold);
+  color: var(--text-1);
+}
+.matchup-table td.win-crit {
+  background: var(--gold-deep);
+  color: var(--surface);
+  font-size: 8.5px;
+}
+.matchup-table td.lose {
+  background: var(--enemy-soft);
+  color: var(--enemy-deep);
+}
+.matchup-table td.lose-crit {
+  background: var(--enemy);
+  color: var(--surface);
+  font-size: 8.5px;
+}
+.matchup-table td.mut {
+  background: var(--enemy);
+  color: var(--surface);
+}
+.matchup-table td.none {
+  background: var(--surface-deep);
+  color: var(--text-3);
+}
+.matchup-table td.mid {
+  background: var(--gold-soft);
+  color: var(--text-1);
+  font-size: 8.5px;
+}
+.matchup-note {
+  font-size: 9.5px;
+  color: var(--text-3);
+  line-height: 1.5;
+  text-align: left;
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: var(--surface);
+  border-left: 2px solid var(--line-soft);
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* CLASS SELECT - 3 horizontal cards fit */
+.class-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.class-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 9px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.class-card:hover {
+  background: var(--line);
+  color: var(--text-inv);
+  box-shadow: 0 4px 0 -2px var(--enemy);
+}
+.class-card:hover .class-blurb,
+.class-card:hover .class-mech-desc,
+.class-card:hover .class-meta { color: var(--surface-deep); }
+.class-card:hover .class-emblem { background: var(--surface); color: var(--line); border-color: var(--surface); }
+.class-card:hover .class-deck-icon { background: var(--surface); color: var(--line); border-color: var(--surface); }
+.class-card:hover .class-stats { border-color: var(--surface-deep); }
+
+.class-emblem {
+  width: 38px;
+  height: 38px;
+  background: var(--line);
+  color: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.class-emblem svg { width: 20px; height: 20px; }
+.class-info { min-width: 0; }
+.class-name {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+}
+.class-meta {
+  font-size: 9.5px;
+  color: var(--text-3);
+  letter-spacing: 0.03em;
+  margin-top: 1px;
+  margin-bottom: 4px;
+  transition: color 0.2s;
+}
+.class-blurb {
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--text-2);
+  margin-bottom: 5px;
+  transition: color 0.2s;
+}
+.class-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  padding: 3px 0;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: 5px;
+}
+.class-stat { text-align: center; }
+.class-stat-num {
+  font-family: 'EB Garamond', serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.class-stat-label {
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-top: 2px;
+  transition: color 0.2s;
+}
+.class-card:hover .class-stat-label { color: var(--surface-deep); }
+.class-mech-tag {
+  display: inline-block;
+  padding: 1px 5px;
+  background: var(--enemy);
+  color: var(--text-inv);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+.class-mech-name {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 11px;
+  margin-bottom: 1px;
+}
+.class-mech-desc {
+  font-size: 9.5px;
+  line-height: 1.35;
+  color: var(--text-3);
+  margin-bottom: 4px;
+  transition: color 0.2s;
+}
+.class-deck {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.class-deck-icon {
+  width: 18px;
+  height: 18px;
+  background: var(--surface-deep);
+  color: var(--text-1);
+  border: 1px solid var(--line-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.class-deck-icon svg { width: 10px; height: 10px; }
+.class-flavor {
+  text-align: center;
+  font-style: italic;
+  color: var(--text-3);
+  font-size: 10px;
+  line-height: 1.5;
+  margin-top: 6px;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+/* MAP */
+.player-bar {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 7px 10px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+}
+.player-bar-emblem {
+  width: 28px;
+  height: 28px;
+  background: var(--player);
+  color: var(--text-inv);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.player-bar-emblem svg { width: 14px; height: 14px; }
+.player-bar-info { flex: 1; min-width: 0; }
+.player-bar-name {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+.player-bar-stats {
+  display: flex;
+  gap: 11px;
+  margin-top: 1px;
+  font-size: 10.5px;
+}
+.player-bar-stats span .label {
+  color: var(--text-3);
+  margin-right: 3px;
+}
+.player-bar-stats span .val {
+  font-family: 'EB Garamond', serif;
+  font-weight: 600;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+.player-bar-deck {
+  font-size: 10px;
+  color: var(--player);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.map-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.map-stage-row {
+  display: flex;
+  gap: 5px;
+  align-items: stretch;
+  position: relative;
+  flex-shrink: 0;
+}
+.map-stage-row::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: -5px;
+  width: 1px;
+  height: 5px;
+  background: var(--line-soft);
+}
+.map-stage-row:first-child::before { display: none; }
+
+.map-node {
+  flex: 1;
+  padding: 7px 9px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.18s;
+  position: relative;
+  min-width: 0;
+}
+.map-node.disabled { opacity: 0.32; cursor: not-allowed; pointer-events: none; }
+.map-node.completed { opacity: 0.42; background: rgba(0,0,0,0.04); }
+.map-node.current {
+  border: 2px solid var(--enemy);
+  box-shadow: 0 0 0 2px rgba(184, 35, 47, 0.08);
+}
+.map-node:not(.disabled):not(.completed):hover {
+  background: var(--line);
+  color: var(--text-inv);
+  border-color: var(--line);
+}
+.map-node:not(.disabled):not(.completed):hover .map-node-detail,
+.map-node:not(.disabled):not(.completed):hover .map-node-type { color: var(--surface-deep); }
+.map-node:not(.disabled):not(.completed):hover .map-node-icon { background: var(--surface); color: var(--line); }
+
+.map-node-icon {
+  width: 30px;
+  height: 30px;
+  background: var(--line);
+  color: var(--text-inv);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+.map-node-icon svg { width: 15px; height: 15px; }
+.map-node-icon.boss { background: var(--enemy); }
+.map-node-icon.shop { background: var(--gold); color: var(--text-1); }
+.map-node-icon.forge { background: var(--sepia); }
+.map-node-icon.dojo { background: var(--green); }
+
+/* Stage header (top of map) */
+.stage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 4px 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--line-soft);
+  flex-shrink: 0;
+}
+.stage-head-num {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-1);
+}
+.stage-head-progress {
+  display: flex;
+  gap: 4px;
+}
+.stage-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--surface-deep);
+  border: 1px solid var(--line-soft);
+}
+.stage-dot.done { background: var(--text-2); border-color: var(--text-2); }
+.stage-dot.here { background: var(--enemy); border-color: var(--enemy-deep); transform: scale(1.3); }
+
+/* Section divider in map */
+.map-section-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 8px 2px 4px;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+.map-section-label::before, .map-section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line-soft);
+}
+.map-section-label .en {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--text-3);
+}
+
+/* Primary stage row (combat) — slightly more emphatic */
+.map-stage-row.primary .map-node {
+  border-width: 2px;
+}
+
+/* Visit (bonus) nodes use compact look */
+.map-node.visit {
+  /* keeps default; differentiation via icon color */
+}
+
+/* Weapon card in forge */
+.weapon-card {
+  background: var(--surface);
+  border: 1.5px solid var(--sepia);
+  padding: 10px 12px;
+  border-radius: 4px;
+}
+.weapon-card-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.weapon-card-emblem {
+  width: 36px;
+  height: 36px;
+  background: var(--sepia);
+  color: var(--surface);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.weapon-card-emblem svg { width: 20px; height: 20px; }
+.weapon-card-info { flex: 1; min-width: 0; }
+.weapon-card-name {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+.weapon-card-tier {
+  font-family: 'EB Garamond', serif;
+  font-weight: 600;
+  color: var(--gold-deep);
+  margin-left: 4px;
+}
+.weapon-card-detail {
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.map-node-info { flex: 1; min-width: 0; }
+.map-node-type {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 9px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  transition: color 0.2s;
+}
+.map-node-name {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 11.5px;
+  margin-top: 1px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.map-node-detail {
+  font-size: 9.5px;
+  color: var(--text-3);
+  margin-top: 1px;
+  transition: color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* COMBAT - side by side stats */
+.versus-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 5px;
+  align-items: stretch;
+  flex-shrink: 0;
+  margin-bottom: 7px;
+}
+.fighter-card {
+  border: 1px solid;
+  padding: 6px 8px 6px;
+  position: relative;
+  min-width: 0;
+}
+.fighter-card.enemy {
+  border-color: var(--enemy-deep);
+  background: linear-gradient(180deg, var(--enemy-tint), var(--surface));
+}
+.fighter-card.player {
+  border-color: var(--player-deep);
+  background: linear-gradient(180deg, var(--player-tint), var(--surface));
+}
+.fighter-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.fighter-card.enemy .fighter-head { flex-direction: row-reverse; text-align: right; }
+.fighter-emblem {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-inv);
+  flex-shrink: 0;
+}
+.fighter-card.enemy .fighter-emblem { background: var(--enemy); }
+.fighter-card.player .fighter-emblem { background: var(--player); }
+.fighter-emblem svg { width: 12px; height: 12px; }
+.fighter-info { flex: 1; min-width: 0; }
+.fighter-name {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fighter-card.enemy .fighter-name { color: var(--enemy-deep); }
+.fighter-card.player .fighter-name { color: var(--player-deep); }
+.fighter-tag {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+.fighter-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat-row {
+  display: grid;
+  grid-template-columns: 20px 1fr 30px;
+  align-items: center;
+  gap: 4px;
+}
+.stat-label {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.fighter-card.enemy .stat-label { text-align: right; }
+.stat-bar {
+  height: 5px;
+  background: var(--surface-deep);
+  border: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+}
+.stat-fill {
+  height: 100%;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fill-hp { background: linear-gradient(90deg, var(--enemy-deep), var(--enemy)); }
+.fighter-card.player .fill-hp { background: linear-gradient(90deg, var(--player-deep), var(--player)); }
+.fill-bal { background: linear-gradient(90deg, var(--gold-deep), var(--gold)); }
+.fill-sta { background: linear-gradient(90deg, var(--green-deep), var(--green)); }
+.stat-num {
+  font-family: 'EB Garamond', serif;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+  white-space: nowrap;
+  text-align: right;
+}
+.versus-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-3);
+  letter-spacing: 0.05em;
+  padding: 0 1px;
+}
+.broken-badge {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--enemy);
+  color: var(--text-inv);
+  padding: 1px 6px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  animation: pulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes pulse { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.05); } }
+
+/* DISTANCE TRACK */
+.distance-section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 5px 10px 6px;
+  flex-shrink: 0;
+  margin-bottom: 7px;
+}
+.distance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+.distance-current {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 11.5px;
+  color: var(--enemy);
+  letter-spacing: 0.04em;
+}
+.distance-track {
+  position: relative;
+  height: 50px;
+  margin-top: 1px;
+}
+.track-zones {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0;
+  height: 100%;
+  position: relative;
+}
+.track-zone {
+  border: 1px solid var(--line-soft);
+  border-right: none;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 2px;
+  background: var(--surface);
+  transition: background 0.4s;
+}
+.track-zone:last-child { border-right: 1px solid var(--line-soft); }
+.track-zone.active {
+  background: var(--gold-soft);
+  border-color: var(--gold-deep);
+}
+.track-zone.player-here {
+  background: var(--player-soft);
+  border-color: var(--player-deep);
+}
+.track-zone.enemy-here {
+  background: var(--enemy-soft);
+  border-color: var(--enemy-deep);
+}
+.track-zone-label {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+  z-index: 2;
+  background: var(--surface);
+  padding: 0 4px;
+}
+.track-zone.active .track-zone-label,
+.track-zone.player-here .track-zone-label,
+.track-zone.enemy-here .track-zone-label {
+  color: var(--text-1);
+  font-weight: 700;
+  background: transparent;
+}
+.track-figures {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fig {
+  position: absolute;
+  top: 3px;
+  width: 20px;
+  height: 36px;
+  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1), right 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fig svg { width: 100%; height: 100%; display: block; }
+.fig.player { color: var(--player); }
+.fig.enemy { color: var(--enemy); }
+.intent-arrow {
+  position: absolute;
+  top: 16px;
+  font-size: 13px;
+  font-family: 'EB Garamond', serif;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 5;
+  pointer-events: none;
+}
+.intent-arrow.show { opacity: 1; }
+.intent-arrow.player { color: var(--player); }
+.intent-arrow.enemy { color: var(--enemy); }
+
+/* THEATER */
+.theater {
+  padding: 6px 10px 7px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--enemy);
+  position: relative;
+  flex-shrink: 0;
+  margin-bottom: 7px;
+}
+.turn-marker {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+}
+.mechanic-tag {
+  position: absolute;
+  top: 4px;
+  left: 11px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 8.5px;
+  font-weight: 500;
+  color: var(--enemy);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+}
+.clash-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  margin: 14px 0 4px;
+  min-height: 36px;
+}
+.clash-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.clash-side.show { opacity: 1; transform: scale(1); }
+
+/* Winner: gold ring + glow + scale up. Loser: faded. Mutual: both highlighted red. */
+.clash-side.winner { transform: scale(1.15); }
+.clash-side.winner .clash-icon {
+  box-shadow: 0 0 0 3px var(--gold), 0 0 14px rgba(184, 134, 44, 0.6);
+  background: var(--gold-soft);
+}
+.clash-side.winner .clash-name { color: var(--gold-deep); font-weight: 900; }
+.clash-side.winner::after {
+  content: '✓';
+  position: absolute;
+  margin-top: -42px;
+  font-size: 18px;
+  color: var(--gold-deep);
+  font-weight: 900;
+  animation: winnerPop 0.4s ease-out;
+}
+.clash-side.loser { opacity: 0.45; transform: scale(0.85); }
+.clash-side.loser .clash-icon {
+  border-color: var(--text-3);
+  color: var(--text-3);
+}
+.clash-side.mutual .clash-icon {
+  box-shadow: 0 0 0 3px var(--enemy), 0 0 12px rgba(184, 35, 47, 0.5);
+  background: var(--enemy-soft);
+}
+.clash-side.mutual .clash-name { color: var(--enemy-deep); font-weight: 900; }
+.clash-side.mutual::after {
+  content: '✕';
+  position: absolute;
+  margin-top: -42px;
+  font-size: 16px;
+  color: var(--enemy-deep);
+  font-weight: 900;
+  animation: winnerPop 0.4s ease-out;
+}
+@keyframes winnerPop {
+  0% { opacity: 0; transform: scale(0.4); }
+  60% { opacity: 1; transform: scale(1.4); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.clash-side { position: relative; }
+
+.clash-icon {
+  width: 28px;
+  height: 28px;
+  border: 2px solid;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.clash-icon svg { width: 14px; height: 14px; }
+.clash-side.player .clash-icon { color: var(--player); border-color: var(--player); }
+.clash-side.enemy .clash-icon { color: var(--enemy); border-color: var(--enemy); }
+.clash-name {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 10.5px;
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+.clash-side.player .clash-name { color: var(--player-deep); }
+.clash-side.enemy .clash-name { color: var(--enemy-deep); }
+.clash-intent-label {
+  font-size: 8.5px;
+  color: var(--text-3);
+  margin-top: 1px;
+  letter-spacing: 0.07em;
+}
+.clash-vs {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.clash-vs.show { opacity: 1; }
+.log {
+  font-size: 10.5px;
+  color: var(--text-2);
+  line-height: 1.45;
+  letter-spacing: 0.005em;
+  font-family: 'Noto Serif KR', serif;
+  max-height: 32px;
+  overflow: hidden;
+}
+.log-entry { opacity: 0; animation: fadeIn 0.5s ease forwards; }
+.log-entry.crit { color: var(--enemy); font-weight: 700; }
+@keyframes fadeIn { to { opacity: 1; } }
+
+/* CONTROLS */
+/* ============ JOYSTICK LAYOUT ============ */
+.controls-row {
+  display: grid;
+  grid-template-columns: 116px 1fr;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-bottom: 7px;
+  align-items: stretch;
+}
+
+/* LEFT: Joystick */
+.joystick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 8px 6px 9px;
+  position: relative;
+}
+.joystick-label {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.joystick-pad {
+  display: grid;
+  grid-template-columns: repeat(5, 19px);
+  gap: 2px;
+  background: var(--surface-deep);
+  border: 1px solid var(--line);
+  border-radius: 50px;
+  padding: 3px 4px;
+  position: relative;
+}
+.joystick-pad::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50px;
+  background:
+    radial-gradient(ellipse at center, transparent 60%, rgba(26,20,16,0.05) 100%);
+  pointer-events: none;
+}
+.jbtn {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--text-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.12s;
+  font-family: inherit;
+  position: relative;
+}
+.jbtn svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+.jbtn:hover {
+  background: var(--line);
+  color: var(--text-inv);
+  transform: scale(1.15);
+  z-index: 5;
+}
+.jbtn.selected {
+  background: var(--line);
+  color: var(--text-inv);
+  box-shadow: 0 0 0 2px var(--enemy);
+  transform: scale(1.2);
+  z-index: 4;
+}
+.jbtn:active {
+  transform: scale(0.92);
+}
+/* 2-step buttons subtly tinted to suggest higher cost */
+.jbtn.jbtn-advance2,
+.jbtn.jbtn-retreat2 {
+  background: var(--enemy-soft);
+}
+.jbtn.jbtn-advance2.selected,
+.jbtn.jbtn-retreat2.selected {
+  background: var(--enemy);
+  color: var(--surface);
+  box-shadow: 0 0 0 2px var(--enemy-deep);
+}
+.joystick-hint {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--enemy);
+  margin-top: 2px;
+  min-height: 16px;
+  line-height: 1;
+}
+
+/* RIGHT: Commands area */
+.commands-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.commands-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 2px;
+}
+.commands-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-1);
+}
+
+.command-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 4px;
+  flex: 1;
+  min-height: 0;
+}
+.command-btn {
+  position: relative;
+  padding: 4px 2px 4px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  cursor: pointer;
+  transition: opacity 0.18s, border-color 0.18s, background 0.15s, transform 0.15s, box-shadow 0.18s;
+  text-align: center;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--text-1);
+  font-family: 'Noto Sans KR', sans-serif;
+  overflow: hidden;
+}
+
+/* State 1: USABLE — 강한 검정 테두리 + 그림자, 풀 opacity */
+.command-btn.state-usable {
+  border-color: var(--line);
+  background: var(--surface);
+  box-shadow: 0 2px 0 0 var(--line), 0 0 0 1px rgba(26, 20, 16, 0.05);
+  opacity: 1;
+}
+.command-btn.state-usable:hover {
+  background: var(--line);
+  color: var(--text-inv);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 0 var(--enemy);
+}
+
+/* State 2: REACHABLE — 금색 점선 + 부드러운 펄싱, 75% opacity */
+.command-btn.state-reachable {
+  border-color: var(--gold);
+  border-style: dashed;
+  background: var(--gold-soft);
+  opacity: 1;
+  cursor: pointer;
+  animation: reachablePulse 1.6s ease-in-out infinite;
+  pointer-events: auto;
+}
+.command-btn.state-reachable .command-name {
+  color: var(--gold-deep);
+  font-weight: 700;
+}
+.command-btn.state-reachable:hover {
+  background: var(--gold);
+  color: var(--text-1);
+  transform: translateY(-1px);
+  animation: none;
+  box-shadow: 0 3px 0 0 var(--gold-deep);
+}
+.command-btn.state-reachable:hover .command-name {
+  color: var(--text-1);
+}
+
+@keyframes reachablePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(184, 134, 44, 0); }
+  50% { box-shadow: 0 0 0 3px rgba(184, 134, 44, 0.35); }
+}
+
+/* State 3: NORESOURCE — 빨간 solid 테두리, 50% opacity */
+.command-btn.state-noresource {
+  border-color: var(--enemy);
+  background: var(--enemy-tint);
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+.command-btn.state-noresource .command-name {
+  color: var(--enemy-deep);
+}
+
+/* State 4: OUTRANGE — 거의 보이지 않게, 회색 테두리 */
+.command-btn.state-outrange {
+  border-color: var(--line-soft);
+  background: var(--surface);
+  opacity: 0.28;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+  pointer-events: auto;
+}
+
+.command-btn.selected {
+  background: var(--line) !important;
+  color: var(--text-inv) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 3px 0 0 var(--enemy) !important;
+  opacity: 1 !important;
+  animation: none !important;
+}
+.command-btn.selected .command-name { color: var(--text-inv) !important; }
+
+.command-btn:disabled { cursor: not-allowed; }
+
+.command-btn.bonus.state-usable {
+  box-shadow: 0 0 0 2px var(--gold), 0 2px 0 0 var(--gold-deep);
+}
+.command-btn.bonus.selected {
+  box-shadow: 0 0 0 2px var(--gold), 0 3px 0 0 var(--enemy) !important;
+}
+
+/* Mini distance gauge inside card */
+.command-gauge {
+  display: inline-flex;
+  gap: 2px;
+  margin-top: 2px;
+  align-items: center;
+  justify-content: center;
+}
+.g-cell {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--line-soft);
+  background: transparent;
+  transition: all 0.2s;
+}
+.g-cell.g-in {
+  background: var(--text-1);
+  border-color: var(--text-1);
+}
+.g-cell.g-here {
+  border-color: var(--enemy);
+  border-width: 1.5px;
+  width: 8px;
+  height: 8px;
+  position: relative;
+}
+.g-cell.g-here.g-in {
+  background: var(--enemy);
+  box-shadow: 0 0 0 1.5px var(--enemy-soft);
+}
+/* When selected, invert gauge */
+.command-btn.selected .g-cell { border-color: var(--surface-deep); }
+.command-btn.selected .g-cell.g-in { background: var(--gold-soft); border-color: var(--gold-soft); }
+.command-btn.selected .g-cell.g-here { border-color: var(--gold); }
+.command-btn.selected .g-cell.g-here.g-in { background: var(--gold); box-shadow: 0 0 0 1.5px var(--gold-deep); }
+
+/* Hover state on usable: invert gauge */
+.command-btn.state-usable:hover .g-cell { border-color: var(--surface-deep); }
+.command-btn.state-usable:hover .g-cell.g-in { background: var(--surface); border-color: var(--surface); }
+.command-btn.state-usable:hover .g-cell.g-here { border-color: var(--enemy-soft); }
+
+.command-icon {
+  width: 22px;
+  height: 22px;
+}
+.command-name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  padding: 0 2px;
+}
+.command-cost {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-family: 'EB Garamond', serif;
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--green-deep);
+  line-height: 1;
+}
+.command-cost.recover { color: var(--green); }
+.command-cost.expensive { color: var(--enemy); }
+.command-btn.selected .command-cost { color: var(--gold-soft); }
+.command-range {
+  position: absolute;
+  bottom: 1px;
+  left: 3px;
+  font-size: 7.5px;
+  color: var(--text-3);
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1;
+}
+.command-btn.selected .command-range { color: var(--surface-deep); }
+.command-tag {
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  font-family: 'EB Garamond', serif;
+  font-size: 8.5px;
+  font-weight: 700;
+  background: var(--gold);
+  color: var(--text-1);
+  padding: 0 3px;
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+.command-limit {
+  position: absolute;
+  top: 1px;
+  left: 3px;
+  font-family: 'EB Garamond', serif;
+  font-size: 8.5px;
+  color: var(--enemy);
+  font-weight: 700;
+  line-height: 1;
+}
+.tip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-3px);
+  background: var(--line);
+  color: var(--text-inv);
+  padding: 4px 7px;
+  font-size: 9.5px;
+  line-height: 1.35;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 20;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.command-btn:hover .tip { opacity: 1; }
+
+.commit-btn {
+  width: 100%;
+  padding: 9px;
+  background: var(--line);
+  color: var(--text-inv);
+  border: none;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.commit-btn:hover:not(:disabled) { background: var(--enemy); }
+.commit-btn:disabled { background: var(--text-3); cursor: not-allowed; opacity: 0.6; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+.shake { animation: shake 0.3s; }
+@keyframes flash-enemy {
+  0%, 100% { background: linear-gradient(180deg, var(--enemy-tint), var(--surface)); }
+  50% { background: rgba(184, 35, 47, 0.18); }
+}
+@keyframes flash-player {
+  0%, 100% { background: linear-gradient(180deg, var(--player-tint), var(--surface)); }
+  50% { background: rgba(184, 35, 47, 0.15); }
+}
+.flash-enemy { animation: flash-enemy 0.4s; }
+.flash-player { animation: flash-player 0.4s; }
+
+/* SHOP & FORGE */
+.scene-header {
+  text-align: center;
+  padding: 4px 0 9px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 9px;
+  position: relative;
+  flex-shrink: 0;
+}
+.scene-header::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  width: 44px;
+  height: 2px;
+  transform: translateX(-50%);
+}
+.scene-header.shop::after { background: var(--gold); }
+.scene-header.forge::after { background: var(--sepia); }
+.scene-header.dojo::after { background: var(--green); }
+.scene-icon {
+  width: 38px;
+  height: 38px;
+  margin: 0 auto 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-inv);
+}
+.scene-header.shop .scene-icon { background: var(--gold); color: var(--text-1); }
+.scene-header.forge .scene-icon { background: var(--sepia); }
+.scene-header.dojo .scene-icon { background: var(--green); }
+.scene-icon svg { width: 19px; height: 19px; }
+.scene-title {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  margin-bottom: 1px;
+}
+.scene-sub {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+.scene-flavor {
+  text-align: center;
+  font-style: italic;
+  color: var(--text-2);
+  font-size: 10.5px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  padding: 0 8px;
+  font-family: 'Noto Serif KR', serif;
+  flex-shrink: 0;
+}
+.purse {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.purse-item { text-align: center; }
+.purse-item .label {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 1px;
+}
+.purse-item .val {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+}
+
+.shop-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all 0.18s;
+  color: var(--text-1);
+}
+.shop-item:hover:not(.sold):not(.unaffordable) {
+  background: var(--line);
+  color: var(--text-inv);
+}
+.shop-item:hover:not(.sold):not(.unaffordable) .shop-item-detail { color: var(--surface-deep); }
+.shop-item:hover:not(.sold):not(.unaffordable) .shop-item-icon { background: var(--surface); color: var(--line); }
+.shop-item.sold { opacity: 0.32; cursor: not-allowed; pointer-events: none; }
+.shop-item.unaffordable { opacity: 0.55; cursor: not-allowed; }
+.shop-item-icon {
+  width: 26px;
+  height: 26px;
+  background: var(--line);
+  color: var(--text-inv);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.shop-item-icon svg { width: 13px; height: 13px; }
+.shop-item-info { flex: 1; min-width: 0; }
+.shop-item-name {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+.shop-item-detail {
+  font-size: 9.5px;
+  color: var(--text-3);
+  margin-top: 1px;
+  line-height: 1.3;
+  transition: color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shop-item-price {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  color: var(--gold-deep);
+}
+.shop-item:hover:not(.sold):not(.unaffordable) .shop-item-price { color: var(--gold); }
+.shop-item-price .strike {
+  text-decoration: line-through;
+  opacity: 0.5;
+  font-size: 10px;
+  margin-right: 3px;
+  font-weight: 400;
+}
+.shop-back-btn {
+  width: 100%;
+  padding: 8px;
+  background: var(--text-2);
+  color: var(--text-inv);
+  border: none;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+  flex-shrink: 0;
+}
+.shop-back-btn:hover { background: var(--line); }
+
+/* Forge */
+.forge-step { margin-bottom: 9px; flex-shrink: 0; }
+.forge-step-title {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  margin-bottom: 5px;
+  color: var(--text-1);
+}
+.forge-step-title.disabled { color: var(--text-3); }
+.forge-deck {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+.forge-deck-card {
+  position: relative;
+  padding: 5px 3px 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.18s;
+  color: var(--text-1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.forge-deck-card:hover:not(.disabled) {
+  background: var(--sepia);
+  color: var(--text-inv);
+}
+.forge-deck-card.selected {
+  background: var(--sepia);
+  color: var(--text-inv);
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.forge-deck-card.disabled { opacity: 0.4; cursor: not-allowed; }
+.forge-deck-card .level {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-family: 'EB Garamond', serif;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+}
+.forge-deck-icon { width: 16px; height: 16px; }
+.forge-deck-name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 9.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.forge-options {
+  display: grid;
+  gap: 5px;
+}
+.forge-option {
+  padding: 7px 11px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 9px;
+  color: var(--text-1);
+}
+.forge-option:hover:not(.disabled) {
+  background: var(--line);
+  color: var(--text-inv);
+}
+.forge-option:hover:not(.disabled) .forge-option-detail { color: var(--surface-deep); }
+.forge-option.disabled { opacity: 0.4; cursor: not-allowed; }
+.forge-option-name {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+  margin-bottom: 1px;
+}
+.forge-option-detail {
+  font-size: 9.5px;
+  color: var(--text-3);
+  transition: color 0.2s;
+  line-height: 1.35;
+}
+.forge-option-cost {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  color: var(--gold-deep);
+}
+.empty-state {
+  text-align: center;
+  padding: 12px 14px;
+  font-style: italic;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-family: 'Noto Serif KR', serif;
+}
+
+/* MODALS */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(26, 20, 16, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+.modal-overlay.hidden { display: none; }
+.modal-card {
+  background: var(--bg);
+  padding: 18px 22px;
+  max-width: 360px;
+  width: 100%;
+  border: 1px solid var(--gold);
+  position: relative;
+  text-align: center;
+}
+.modal-card::before, .modal-card::after {
+  content: '';
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border: 1px solid var(--gold);
+}
+.modal-card::before { top: 4px; left: 4px; border-right: none; border-bottom: none; }
+.modal-card::after { bottom: 4px; right: 4px; border-left: none; border-top: none; }
+.modal-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 8px;
+  border-radius: 50%;
+  background: var(--text-1);
+  color: var(--gold-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-icon.win { background: var(--gold-deep); color: var(--surface); }
+.modal-icon.lose { background: var(--enemy-deep); color: var(--surface); }
+.modal-icon svg { width: 24px; height: 24px; }
+.modal-title {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+.modal-text {
+  font-size: 11px;
+  color: var(--text-2);
+  letter-spacing: 0.02em;
+  margin-bottom: 11px;
+  line-height: 1.5;
+  font-family: 'Noto Serif KR', serif;
+}
+.reward-list {
+  text-align: left;
+  margin: 9px 0;
+  background: rgba(184, 134, 44, 0.08);
+  padding: 7px 10px;
+  border-left: 3px solid var(--gold);
+}
+.reward-list-item {
+  font-size: 11px;
+  line-height: 1.65;
+  display: flex;
+  justify-content: space-between;
+}
+.reward-list-item .label { color: var(--text-2); }
+.reward-list-item .val {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+.modal-card .commit-btn {
+  font-size: 11.5px;
+  padding: 8px;
+  letter-spacing: 0.18em;
+}
+
+/* Deck Modal */
+.deck-modal-list { text-align: left; max-height: 56vh; overflow-y: auto; padding-right: 3px; }
+.deck-modal-row {
+  padding: 6px 3px;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.deck-modal-row:last-child { border-bottom: none; }
+.deck-modal-icon {
+  width: 22px;
+  height: 22px;
+  background: var(--surface-deep);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-1);
+}
+.deck-modal-icon svg { width: 11px; height: 11px; }
+.deck-modal-info { flex: 1; min-width: 0; }
+.deck-modal-name {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 11.5px;
+}
+.deck-modal-name .lvl {
+  color: var(--gold);
+  font-family: 'EB Garamond', serif;
+  font-weight: 600;
+  margin-left: 3px;
+}
+.deck-modal-meta {
+  font-size: 9.5px;
+  color: var(--text-3);
+  margin-top: 1px;
+  line-height: 1.3;
+}
+/* ============== SPEED DOT ============== */
+.speed-dot {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--text-1);
+  z-index: 2;
+}
+.speed-dot.speed-0 { background: var(--enemy); border-color: var(--enemy-deep); box-shadow: 0 0 4px var(--enemy); }
+.speed-dot.speed-1 { background: var(--gold); border-color: var(--gold-deep); }
+.speed-dot.speed-2 { background: var(--text-1); }
+.speed-dot.speed-3 { background: var(--text-3); }
+.speed-dot.speed-4 { background: var(--surface-deep); border-color: var(--text-3); }
+
+/* ============== WEAPON STATUS ============== */
+.weapon-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 9.5px;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+.weapon-bar .dura {
+  display: inline-block;
+  width: 28px;
+  height: 4px;
+  background: var(--surface-deep);
+  border: 0.5px solid var(--text-3);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+.weapon-bar .dura-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--gold-deep);
+  transition: width 0.3s, background 0.3s;
+}
+.weapon-bar.broken .dura-fill { background: var(--enemy); width: 100%; }
+.weapon-bar.broken { color: var(--enemy); font-weight: 700; }
+
+.disarm-badge {
+  display: none;
+  background: var(--enemy);
+  color: var(--surface);
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.08em;
+  animation: pulse 0.6s ease-in-out infinite alternate;
+}
+.disarm-badge.active { display: inline-block; }
+
+/* ============== ADMIN CONSOLE ============== */
+.admin-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: var(--surface-deep);
+  border: 1px solid var(--line-soft);
+  color: var(--text-2);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.15s;
+}
+.admin-btn:hover { background: var(--line); color: var(--surface); transform: rotate(60deg); }
+
+#screen-admin {
+  display: none;
+  flex-direction: column;
+  background: var(--bg);
+  padding: 0;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+#screen-admin.active { display: flex; }
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 2px solid var(--line);
+  background: var(--surface);
+  flex-shrink: 0;
+  gap: 8px;
+}
+.admin-back {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-1);
+  padding: 6px 12px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.admin-back:hover { background: var(--line); color: var(--surface); }
+.admin-title {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 16px;
+  letter-spacing: 0.18em;
+  color: var(--text-2);
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
+}
+.admin-settings {
+  background: var(--surface-deep);
+  border: 1px solid var(--line-soft);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+}
+.admin-settings:hover { background: var(--gold-soft); }
+
+.admin-status {
+  padding: 6px 14px;
+  font-size: 11.5px;
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--surface-deep);
+  color: var(--text-2);
+  flex-shrink: 0;
+  min-height: 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.admin-status.ok { background: #d6e6d2; color: #2a4d22; }
+.admin-status.err { background: #f5d6d6; color: #7a1818; }
+.admin-status.busy { background: var(--gold-soft); color: var(--gold-deep); }
+
+.admin-tabs {
+  display: flex;
+  overflow-x: auto;
+  gap: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-soft);
+  flex-shrink: 0;
+  scrollbar-width: thin;
+}
+.admin-tab {
+  flex: 1 0 auto;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-3);
+  font-family: 'Noto Serif KR', serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+.admin-tab.active {
+  color: var(--enemy);
+  border-bottom-color: var(--enemy);
+  background: var(--surface);
+}
+.admin-tab:hover:not(.active) { color: var(--text-1); }
+
+.admin-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-soft);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.admin-tool {
+  padding: 6px 10px;
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 2px;
+  color: var(--text-1);
+}
+.admin-tool:hover { background: var(--line); color: var(--surface); }
+.admin-tool.save { background: var(--gold); border-color: var(--gold-deep); color: var(--text-1); }
+.admin-tool.save:hover { background: var(--gold-deep); color: var(--surface); }
+.admin-tool.reset { color: var(--enemy); border-color: var(--enemy); }
+.admin-tool.export { color: var(--text-2); }
+
+.admin-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* row card */
+.adm-row {
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.adm-row-head {
+  display: flex;
+  align-items: center;
+  padding: 9px 11px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--surface);
+  border-bottom: 1px solid transparent;
+  gap: 8px;
+}
+.adm-row.expanded .adm-row-head {
+  border-bottom-color: var(--line-soft);
+  background: var(--surface-deep);
+}
+.adm-row-key {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+  min-width: 90px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-row-name {
+  flex: 1;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-row-summary {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+  text-align: right;
+}
+.adm-row-toggle {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-3);
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+.adm-row.expanded .adm-row-toggle { transform: rotate(90deg); color: var(--enemy); }
+
+.adm-row-body {
+  display: none;
+  padding: 12px 11px 14px;
+  background: var(--surface);
+  border-top: 1px solid var(--line-soft);
+}
+.adm-row.expanded .adm-row-body { display: block; }
+
+.adm-field {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 7px;
+}
+.adm-field label {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+.adm-field input,
+.adm-field select,
+.adm-field textarea {
+  background: var(--surface-deep);
+  border: 1px solid var(--line-soft);
+  padding: 5px 7px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12.5px;
+  color: var(--text-1);
+  border-radius: 2px;
+  font-weight: 500;
+  width: 100%;
+  box-sizing: border-box;
+}
+.adm-field input:focus,
+.adm-field select:focus,
+.adm-field textarea:focus {
+  outline: none;
+  border-color: var(--enemy);
+  background: var(--surface);
+}
+.adm-field input[type="checkbox"] {
+  width: auto;
+  justify-self: start;
+}
+.adm-field textarea {
+  resize: vertical;
+  min-height: 38px;
+  font-family: 'EB Garamond', serif;
+  font-size: 12px;
+  font-style: italic;
+}
+.adm-field-hint {
+  font-size: 10px;
+  color: var(--text-3);
+  font-style: italic;
+  grid-column: 2;
+  margin-top: -4px;
+}
+
+.adm-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line-soft);
+}
+.adm-row-actions button {
+  background: transparent;
+  border: 1px solid var(--text-3);
+  color: var(--text-2);
+  padding: 4px 10px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.adm-row-actions button.del {
+  border-color: var(--enemy);
+  color: var(--enemy);
+}
+.adm-row-actions button.del:hover {
+  background: var(--enemy);
+  color: var(--surface);
+}
+.adm-row-actions button.dup {
+  border-color: var(--gold-deep);
+  color: var(--gold-deep);
+}
+.adm-row-actions button.dup:hover {
+  background: var(--gold);
+  color: var(--text-1);
+}
+
+/* For balance.json — flat object editor */
+.adm-flat {
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.adm-flat-title {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--enemy);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.adm-empty {
+  text-align: center;
+  padding: 30px 20px;
+  color: var(--text-3);
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+}
+
+/* setup modal */
+.admin-setup-group {
+  margin-bottom: 12px;
+}
+.admin-setup-group label {
+  display: block;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin-bottom: 4px;
+}
+.admin-setup-group label .hint {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 10.5px;
+  color: var(--text-3);
+  font-weight: 400;
+  margin-left: 6px;
+}
+.admin-setup-group input {
+  width: 100%;
+  background: var(--surface-deep);
+  border: 1px solid var(--line-soft);
+  padding: 7px 9px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12.5px;
+  color: var(--text-1);
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+.admin-setup-group input:focus {
+  outline: none;
+  border-color: var(--enemy);
+  background: var(--surface);
+}
+.admin-setup-status {
+  margin-top: 12px;
+  font-size: 11.5px;
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 16px;
+}
+.admin-setup-status.ok { color: #2a4d22; }
+.admin-setup-status.err { color: #7a1818; }
+
+</style>
+</head>
+<body>
+
+<!-- ============== SVG ICON SPRITES ============== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Combat icons -->
+    <symbol id="i-attack" viewBox="0 0 24 24">
+      <path d="M3 21 L12 12 M12 12 L21 3 M19 5 L21 3 L19 5 L17 7 M14.5 9.5 L21 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M3 21 L7 17 L9 19 L5 23 Z" transform="translate(0 -2)" fill="currentColor" opacity="0.7"/>
+    </symbol>
+    <symbol id="i-thrust" viewBox="0 0 24 24">
+      <path d="M4 12 L20 12 M16 8 L20 12 L16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-block" viewBox="0 0 24 24">
+      <path d="M12 3 L20 6 V12 C20 16 16 19.5 12 21 C8 19.5 4 16 4 12 V6 L12 3 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-dodge" viewBox="0 0 24 24">
+      <path d="M5 12 C8 6 16 6 19 12 M19 12 L15 9 M19 12 L17 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-parry" viewBox="0 0 24 24">
+      <path d="M5 5 L19 19 M19 5 L5 19" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-push" viewBox="0 0 24 24">
+      <path d="M3 12 L18 12 M14 8 L18 12 L14 16 M21 6 V18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-rest" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M8 12 C8 9 10 7 12 7 C14 7 16 9 16 12 C16 15 14 17 12 17" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    </symbol>
+    <symbol id="i-feint" viewBox="0 0 24 24">
+      <path d="M5 12 L9 12 M11 12 L13 12 M15 12 L19 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="20" cy="12" r="1" fill="currentColor"/>
+    </symbol>
+    <!-- Intent icons -->
+    <symbol id="i-advance" viewBox="0 0 24 24">
+      <path d="M5 12 L19 12 M14 7 L19 12 L14 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-hold" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3" fill="currentColor"/>
+      <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 3"/>
+    </symbol>
+    <symbol id="i-retreat" viewBox="0 0 24 24">
+      <path d="M19 12 L5 12 M10 7 L5 12 L10 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- Map node icons -->
+    <symbol id="i-combat" viewBox="0 0 24 24">
+      <path d="M3 21 L12 12 M21 3 L13 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M3 3 L11 11 M13 13 L21 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M19 5 L21 3 L21 5 L19 5 Z M3 19 L5 21 L3 21 L3 19 Z M5 3 L3 5 L3 3 L5 3 Z M19 21 L21 19 L21 21 L19 21 Z" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-shop" viewBox="0 0 24 24">
+      <path d="M5 8 L7 5 H17 L19 8 V20 C19 20.5 18.5 21 18 21 H6 C5.5 21 5 20.5 5 20 V8 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M9 12 C9 13.5 10 15 12 15 C14 15 15 13.5 15 12" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    </symbol>
+    <symbol id="i-forge" viewBox="0 0 24 24">
+      <path d="M3 14 L21 14 L19 17 H5 L3 14 Z" fill="currentColor"/>
+      <path d="M5 17 L5 21 M19 17 L19 21" stroke="currentColor" stroke-width="2"/>
+      <path d="M8 14 L8 6 C8 5 9 4 10 4 H14 C15 4 16 5 16 6 L16 14" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M10 4 L10 8 M14 4 L14 8" stroke="currentColor" stroke-width="1.5"/>
+    </symbol>
+    <symbol id="i-dojo" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="12" cy="12" r="5.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="12" cy="12" r="2" fill="currentColor"/>
+      <path d="M12 2 L12 5 M12 19 L12 22 M2 12 L5 12 M19 12 L22 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-boss" viewBox="0 0 24 24">
+      <path d="M3 18 L5 8 L9 12 L12 5 L15 12 L19 8 L21 18 Z" fill="currentColor"/>
+      <path d="M4 21 L20 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <!-- Class emblems -->
+    <symbol id="e-ronin" viewBox="0 0 32 32">
+      <path d="M6 26 L26 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M5 27 L7 25 L9 27 L7 29 Z" fill="currentColor"/>
+      <path d="M22 6 L26 6 L26 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="e-dobu" viewBox="0 0 32 32">
+      <path d="M6 24 Q12 14 26 8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M5 25 L7 23 L9 25 L7 27 Z" fill="currentColor"/>
+      <circle cx="22" cy="20" r="1.5" fill="currentColor"/>
+      <circle cx="26" cy="14" r="1.5" fill="currentColor"/>
+      <circle cx="18" cy="26" r="1.5" fill="currentColor"/>
+    </symbol>
+    <symbol id="e-merchant" viewBox="0 0 32 32">
+      <path d="M16 6 L16 26" stroke="currentColor" stroke-width="2"/>
+      <path d="M10 12 L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M6 16 L14 16 L10 22 Z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M18 16 L26 16 L22 22 Z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <circle cx="16" cy="6" r="1.5" fill="currentColor"/>
+    </symbol>
+    <!-- Item icons -->
+    <symbol id="i-potion" viewBox="0 0 24 24">
+      <path d="M9 3 L15 3 L15 8 C18 9 19 12 19 15 C19 19 16 21 12 21 C8 21 5 19 5 15 C5 12 6 9 9 8 L9 3 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M8 14 L16 14" stroke="currentColor" stroke-width="1.5"/>
+    </symbol>
+    <!-- Modal icons -->
+    <symbol id="i-trophy" viewBox="0 0 24 24">
+      <path d="M7 4 L17 4 L17 11 C17 14 15 16 12 16 C9 16 7 14 7 11 L7 4 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M17 6 H20 V9 C20 11 18 12 17 12 M7 6 H4 V9 C4 11 6 12 7 12" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M9 16 L9 19 L15 19 L15 16 M7 21 L17 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-skull" viewBox="0 0 24 24">
+      <path d="M5 11 C5 6 8 3 12 3 C16 3 19 6 19 11 L19 15 L17 17 L17 20 L15 20 L15 17 L13 17 L13 20 L11 20 L11 17 L9 17 L9 20 L7 20 L7 17 L5 15 L5 11 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="9" cy="11" r="1.5" fill="currentColor"/>
+      <circle cx="15" cy="11" r="1.5" fill="currentColor"/>
+    </symbol>
+    <!-- Warrior figures -->
+    <symbol id="warrior-r" viewBox="0 0 32 56">
+      <!-- right-facing warrior with sword -->
+      <circle cx="14" cy="10" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M14 15 L14 34" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M14 20 L8 28" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M14 20 L22 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M22 18 L31 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M14 34 L9 50" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M14 34 L19 50" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="warrior-l" viewBox="0 0 32 56">
+      <!-- left-facing warrior with sword (mirror) -->
+      <circle cx="18" cy="10" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M18 15 L18 34" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M18 20 L24 28" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M18 20 L10 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M10 18 L1 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M18 34 L13 50" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M18 34 L23 50" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- =================== CLASS SELECT =================== -->
+<section id="screen-class-select" class="screen active">
+  <header class="title-bar">
+    <div class="title-main">일&nbsp;기&nbsp;토</div>
+    <div class="title-en">A Roguelite of Single Combat &middot; v1.1</div>
+    <button class="admin-btn" id="open-admin-btn" title="데이터 편집 콘솔" aria-label="데이터 편집">⚙</button>
+  </header>
+
+  <div class="section-label"><span class="ko">캐릭터 선택</span><span class="en">Choose Your Duelist</span></div>
+
+  <div class="class-grid" id="class-grid"></div>
+
+  <div class="class-flavor">
+    다섯 합의 길을 걸어 검호를 베어라.<br>
+    상점에서 새 검을 살지, 대장간에서 가진 검을 갈지 — 그것은 그대의 선택.
+  </div>
+</section>
+
+<!-- =================== MAP =================== -->
+<section id="screen-map" class="screen">
+  <header class="title-bar">
+    <div class="title-main" id="map-title">일&nbsp;기&nbsp;토</div>
+    <div class="title-en" id="map-en">The Path</div>
+  </header>
+
+  <div class="player-bar">
+    <div class="player-bar-emblem"><svg id="map-emblem-svg"><use href="#e-ronin"/></svg></div>
+    <div class="player-bar-info">
+      <div class="player-bar-name" id="map-class-name">떠돌이 검객</div>
+      <div class="player-bar-stats">
+        <span><span class="label">HP</span><span class="val" id="map-hp">100/100</span></span>
+        <span><span class="label">소지금</span><span class="val" id="map-gold">50</span></span>
+      </div>
+    </div>
+    <div class="player-bar-deck" id="map-deck-link">덱 보기 (5)</div>
+  </div>
+
+  <div class="section-label"><span class="ko">갈림길</span><span class="en">The Path Ahead</span></div>
+
+  <div class="map-container" id="map-container"></div>
+</section>
+
+<!-- =================== COMBAT =================== -->
+<section id="screen-combat" class="screen">
+  <!-- Side-by-side stats -->
+  <div class="versus-bar">
+    <div class="fighter-card enemy" id="enemy-card">
+      <div class="fighter-head">
+        <div class="fighter-emblem"><svg width="18" height="18"><use href="#i-skull"/></svg></div>
+        <div class="fighter-info">
+          <div class="fighter-name" id="enemy-name">산적</div>
+          <div class="fighter-tag" id="enemy-tag">Stage 1</div>
+        </div>
+      </div>
+      <div class="fighter-stats">
+        <div class="stat-row">
+          <span class="stat-label">HP</span>
+          <div class="stat-bar"><div class="stat-fill fill-hp" id="enemy-hp-bar"></div></div>
+          <span class="stat-num" id="enemy-hp">60/60</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">균형</span>
+          <div class="stat-bar"><div class="stat-fill fill-bal" id="enemy-bal-bar"></div></div>
+          <span class="stat-num" id="enemy-bal">60/60</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">기력</span>
+          <div class="stat-bar"><div class="stat-fill fill-sta" id="enemy-sta-bar"></div></div>
+          <span class="stat-num" id="enemy-sta">5/10</span>
+        </div>
+        <div class="stat-row" style="gap: 6px; margin-top: 2px;">
+          <div class="weapon-bar" id="enemy-weapon-bar">
+            <span>무기</span>
+            <span class="dura"><span class="dura-fill" id="enemy-weapon-fill" style="width:100%"></span></span>
+            <span id="enemy-weapon-pct">100%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="versus-divider">vs</div>
+
+    <div class="fighter-card player" id="player-card">
+      <div class="fighter-head">
+        <div class="fighter-emblem"><svg width="18" height="18" id="player-emblem-svg"><use href="#e-ronin"/></svg></div>
+        <div class="fighter-info">
+          <div class="fighter-name" id="player-name">떠돌이 검객</div>
+          <div class="fighter-tag" id="player-tag">— 그대 —</div>
+        </div>
+      </div>
+      <div class="fighter-stats">
+        <div class="stat-row">
+          <span class="stat-label">HP</span>
+          <div class="stat-bar"><div class="stat-fill fill-hp" id="player-hp-bar"></div></div>
+          <span class="stat-num" id="player-hp">100/100</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">균형</span>
+          <div class="stat-bar"><div class="stat-fill fill-bal" id="player-bal-bar"></div></div>
+          <span class="stat-num" id="player-bal">100/100</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">기력</span>
+          <div class="stat-bar"><div class="stat-fill fill-sta" id="player-sta-bar"></div></div>
+          <span class="stat-num" id="player-sta">5/10</span>
+        </div>
+        <div class="stat-row" style="gap: 6px; margin-top: 2px;">
+          <div class="weapon-bar" id="player-weapon-bar">
+            <span id="player-weapon-name">검</span>
+            <span class="dura"><span class="dura-fill" id="player-weapon-fill" style="width:100%"></span></span>
+            <span id="player-weapon-pct">100%</span>
+          </div>
+          <span class="disarm-badge" id="player-disarm-badge">⚠ 검 놓침</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Distance with figures -->
+  <div class="distance-section">
+    <div class="distance-header">
+      <span class="label-ko">거리 · DISTANCE</span>
+      <span class="distance-current" id="distance-current">3</span>
+    </div>
+    <div class="distance-track">
+      <div class="track-zones" id="track-zones"></div>
+      <div class="track-figures">
+        <div class="fig player" id="fig-player"><svg><use href="#warrior-r"/></svg></div>
+        <div class="fig enemy" id="fig-enemy"><svg><use href="#warrior-l"/></svg></div>
+        <div class="intent-arrow player" id="arrow-player">→</div>
+        <div class="intent-arrow enemy" id="arrow-enemy">←</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Theater -->
+  <section class="theater">
+    <div class="turn-marker"><span class="num" id="turn-num">1</span> 합</div>
+    <div class="mechanic-tag" id="mechanic-display"></div>
+    <div class="clash-display">
+      <div class="clash-side player" id="clash-player">
+        <div class="clash-icon"><svg id="clash-player-icon"><use href="#i-attack"/></svg></div>
+        <div class="clash-name" id="clash-player-name">베기</div>
+        <div class="clash-intent-label" id="clash-player-intent">전진</div>
+      </div>
+      <div class="clash-vs" id="clash-vs">vs</div>
+      <div class="clash-side enemy" id="clash-enemy">
+        <div class="clash-icon"><svg id="clash-enemy-icon"><use href="#i-block"/></svg></div>
+        <div class="clash-name" id="clash-enemy-name">막기</div>
+        <div class="clash-intent-label" id="clash-enemy-intent">유지</div>
+      </div>
+    </div>
+    <div class="log" id="log"><div class="log-entry" style="opacity:1">서로의 호흡을 살핀다. 한 걸음의 무게를 잰다.</div></div>
+  </section>
+
+  <!-- Combined controls: joystick (left) + commands (right) -->
+  <div class="controls-row">
+    <!-- LEFT: Joystick / movement -->
+    <div class="joystick">
+      <div class="joystick-label">이동 · 기력</div>
+      <div class="joystick-pad" id="intent-row">
+        <button class="jbtn jbtn-retreat2" data-intent="retreat2" data-cost="2" aria-label="후퇴 2칸">
+          <svg viewBox="0 0 24 24"><path d="M22 12 L4 12 M11 6 L4 12 L11 18 M16 6 L9 12 L16 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="jbtn jbtn-retreat" data-intent="retreat" data-cost="1" aria-label="후퇴 1칸">
+          <svg viewBox="0 0 24 24"><path d="M19 12 L5 12 M10 7 L5 12 L10 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="jbtn jbtn-hold selected" data-intent="hold" data-cost="0" aria-label="유지">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5" fill="currentColor"/><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.5 3"/></svg>
+        </button>
+        <button class="jbtn jbtn-advance" data-intent="advance" data-cost="1" aria-label="전진 1칸">
+          <svg viewBox="0 0 24 24"><path d="M5 12 L19 12 M14 7 L19 12 L14 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="jbtn jbtn-advance2" data-intent="advance2" data-cost="2" aria-label="전진 2칸">
+          <svg viewBox="0 0 24 24"><path d="M2 12 L20 12 M13 6 L20 12 L13 18 M8 6 L15 12 L8 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="joystick-hint" id="joystick-hint">유지 · 0</div>
+    </div>
+
+    <!-- RIGHT: Commands -->
+    <div class="commands-area">
+      <div class="commands-header">
+        <span class="commands-title">기예</span>
+        <button class="matchup-btn" onclick="document.getElementById('modal-matchup').classList.remove('hidden')">상성표</button>
+      </div>
+      <div class="command-grid" id="command-grid"></div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== SHOP =================== -->
+<section id="screen-shop" class="screen">
+  <header class="scene-header shop">
+    <div class="scene-icon"><svg><use href="#i-shop"/></svg></div>
+    <div class="scene-title">길가의 상점</div>
+    <div class="scene-sub">The Roadside Bazaar</div>
+  </header>
+
+  <div class="scene-flavor" id="shop-flavor">
+    "그 칼은 어울리지 않는 듯하구려. 더 좋은 솜씨가 여기 있소."
+  </div>
+
+  <div class="purse">
+    <div class="purse-item">
+      <div class="label">소지금</div>
+      <div class="val"><span id="shop-gold">0</span></div>
+    </div>
+    <div class="purse-item">
+      <div class="label">HP</div>
+      <div class="val"><span id="shop-hp">0/0</span></div>
+    </div>
+  </div>
+
+  <div class="shop-scroll">
+    <div class="section-label"><span class="ko">새 기예</span><span class="en">New Commands</span></div>
+    <div id="shop-commands"></div>
+
+    <div class="section-label" style="margin-top: 12px;"><span class="ko">소모품</span><span class="en">Provisions</span></div>
+    <div id="shop-potions"></div>
+  </div>
+
+  <button class="shop-back-btn" id="shop-leave-btn">떠나기</button>
+</section>
+
+<!-- =================== FORGE =================== -->
+<section id="screen-forge" class="screen">
+  <header class="scene-header forge">
+    <div class="scene-icon"><svg><use href="#i-forge"/></svg></div>
+    <div class="scene-title">산속 대장간</div>
+    <div class="scene-sub">The Mountain Forge · 무기 강화</div>
+  </header>
+
+  <div class="scene-flavor" id="forge-flavor">
+    "검은 쓸수록 무뎌지지. 그러나 잘 갈면 — 다시 산다."
+  </div>
+
+  <div class="purse">
+    <div class="purse-item">
+      <div class="label">소지금</div>
+      <div class="val"><span id="forge-gold">0</span></div>
+    </div>
+    <div class="purse-item">
+      <div class="label">HP</div>
+      <div class="val"><span id="forge-hp">0/0</span></div>
+    </div>
+  </div>
+
+  <div class="shop-scroll">
+    <div class="forge-step">
+      <div class="forge-step-title">소지 무기</div>
+      <div class="forge-deck" id="forge-deck"></div>
+    </div>
+
+    <div class="forge-step">
+      <div class="forge-step-title" id="forge-options-title">강화 방식</div>
+      <div class="forge-options" id="forge-options"></div>
+    </div>
+  </div>
+
+  <button class="shop-back-btn" id="forge-leave-btn">떠나기</button>
+</section>
+
+<!-- =================== DOJO =================== -->
+<section id="screen-dojo" class="screen">
+  <header class="scene-header dojo">
+    <div class="scene-icon"><svg><use href="#i-dojo"/></svg></div>
+    <div class="scene-title">수련장</div>
+    <div class="scene-sub">The Dojo · 기예 숙련</div>
+  </header>
+
+  <div class="scene-flavor" id="dojo-flavor">
+    "한 동작을 천 번 해라. 천 동작을 한 번 하지 말고."
+  </div>
+
+  <div class="purse">
+    <div class="purse-item">
+      <div class="label">소지금</div>
+      <div class="val"><span id="dojo-gold">0</span></div>
+    </div>
+    <div class="purse-item">
+      <div class="label">HP</div>
+      <div class="val"><span id="dojo-hp">0/0</span></div>
+    </div>
+  </div>
+
+  <div class="shop-scroll">
+    <div class="forge-step">
+      <div class="forge-step-title">수련할 기예 선택</div>
+      <div class="forge-deck" id="dojo-deck"></div>
+    </div>
+
+    <div class="forge-step">
+      <div class="forge-step-title disabled" id="dojo-options-title">수련 방식</div>
+      <div class="forge-options" id="dojo-options"></div>
+    </div>
+  </div>
+
+  <button class="shop-back-btn" id="dojo-leave-btn">떠나기</button>
+</section>
+
+<!-- =================== REWARD MODAL =================== -->
+<div class="modal-overlay hidden" id="modal-reward">
+  <div class="modal-card">
+    <div class="modal-icon win"><svg><use href="#i-trophy"/></svg></div>
+    <div class="modal-title" id="reward-title">승리</div>
+    <div class="modal-text" id="reward-flavor"></div>
+    <div class="reward-list" id="reward-list"></div>
+    <button class="commit-btn" id="reward-continue-btn">계속하기</button>
+  </div>
+</div>
+
+<!-- =================== END MODAL =================== -->
+<div class="modal-overlay hidden" id="modal-end">
+  <div class="modal-card">
+    <div class="modal-icon" id="end-icon-wrap"><svg id="end-icon-svg"><use href="#i-trophy"/></svg></div>
+    <div class="modal-title" id="end-title">승리</div>
+    <div class="modal-text" id="end-text">— 검호를 베고 길을 떠난다 —</div>
+    <button class="commit-btn" onclick="location.reload()">다시 시작</button>
+  </div>
+</div>
+
+<!-- =================== ADMIN CONSOLE =================== -->
+<section id="screen-admin" class="screen">
+  <header class="admin-header">
+    <button class="admin-back" id="admin-back-btn">← 게임으로</button>
+    <div class="admin-title">DATA CONSOLE</div>
+    <button class="admin-settings" id="admin-settings-btn" title="GitHub 연동 설정">🔑</button>
+  </header>
+
+  <div class="admin-status" id="admin-status"></div>
+
+  <nav class="admin-tabs" id="admin-tabs">
+    <button class="admin-tab active" data-file="commands">기예</button>
+    <button class="admin-tab" data-file="classes">클래스</button>
+    <button class="admin-tab" data-file="enemies">적</button>
+    <button class="admin-tab" data-file="weapons">무기</button>
+    <button class="admin-tab" data-file="map">스테이지</button>
+    <button class="admin-tab" data-file="balance">균형</button>
+  </nav>
+
+  <div class="admin-toolbar" id="admin-toolbar">
+    <button class="admin-tool" id="admin-add-btn">＋ 행 추가</button>
+    <button class="admin-tool save" id="admin-save-btn">💾 저장</button>
+    <button class="admin-tool reset" id="admin-reset-btn">↺ 원본 리셋</button>
+    <button class="admin-tool export" id="admin-export-btn">⤓ JSON 내보내기</button>
+  </div>
+
+  <div class="admin-body" id="admin-body"></div>
+</section>
+
+<!-- =================== ADMIN GITHUB SETUP MODAL =================== -->
+<div class="modal-overlay hidden" id="modal-admin-setup">
+  <div class="modal-card" style="max-width: 460px; padding: 22px 20px;">
+    <div class="modal-title">GitHub 연동</div>
+    <div class="label-en" style="margin-bottom: 14px;">Auto-commit settings</div>
+
+    <div class="admin-setup-group">
+      <label>Repository <span class="hint">예: yourname/ikkiuchi</span></label>
+      <input type="text" id="admin-repo" placeholder="user/repo">
+    </div>
+    <div class="admin-setup-group">
+      <label>Branch <span class="hint">보통 main</span></label>
+      <input type="text" id="admin-branch" value="main">
+    </div>
+    <div class="admin-setup-group">
+      <label>Personal Access Token <span class="hint">github.com/settings/tokens 에서 발급</span></label>
+      <input type="password" id="admin-token" placeholder="ghp_... 또는 github_pat_...">
+      <div class="hint" style="margin-top:5px">Fine-grained token: 본인 repo의 Contents (read & write) 권한.</div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top: 16px;">
+      <button class="admin-tool save" id="admin-setup-save" style="flex:1">저장</button>
+      <button class="admin-tool reset" id="admin-setup-clear">지우기</button>
+      <button class="admin-tool" id="admin-setup-cancel">닫기</button>
+    </div>
+    <div id="admin-setup-status" class="admin-setup-status"></div>
+  </div>
+</div>
+
+<!-- =================== DECK MODAL =================== -->
+<div class="modal-overlay hidden" id="modal-deck">
+  <div class="modal-card" style="max-width: 480px;">
+    <div class="modal-title">소지 기예</div>
+    <div class="label-en" style="margin-bottom: 18px;">Your Commands</div>
+    <div class="deck-modal-list" id="deck-modal-list"></div>
+    <button class="commit-btn" onclick="document.getElementById('modal-deck').classList.add('hidden')" style="margin-top: 18px;">닫기</button>
+  </div>
+</div>
+
+<!-- =================== MATCHUP TABLE MODAL =================== -->
+<div class="modal-overlay hidden" id="modal-matchup">
+  <div class="modal-card" style="max-width: 420px; padding: 18px 16px;">
+    <div class="modal-title" style="margin-bottom: 4px;">기예 상성표</div>
+    <div class="label-en" style="margin-bottom: 10px;">Command Matchup</div>
+    <div class="matchup-legend">
+      <span><span class="dot win"></span>유리</span>
+      <span><span class="dot lose"></span>불리</span>
+      <span><span class="dot mut"></span>상호</span>
+      <span><span class="dot none"></span>무효</span>
+    </div>
+    <table class="matchup-table">
+      <thead>
+        <tr>
+          <th class="corner"><span class="corner-me">내 기예</span><span class="corner-en">상대 기예</span></th>
+          <th>공격</th><th>찌르기</th><th>막기</th><th>회피</th><th>받아치기</th><th>밀치기</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th>공격</th>
+          <td class="m mut" title="양쪽 60% 데미지">상호</td>
+          <td class="m lose" title="찌르기 우선">패</td>
+          <td class="m win" title="25% 관통, 균형 -5">승</td>
+          <td class="m none" title="빗나감">―</td>
+          <td class="m lose" title="적 반격">패</td>
+          <td class="m win" title="공격 먼저 닿음">승</td>
+        </tr>
+        <tr><th>찌르기</th>
+          <td class="m win" title="찌르기 우선">승</td>
+          <td class="m mut" title="치명 양쪽">상호</td>
+          <td class="m win" title="55% 관통">승</td>
+          <td class="m lose" title="허공, 균형 -5">패</td>
+          <td class="m lose" title="적 반격">패</td>
+          <td class="m win-crit" title="치명타!">치명</td>
+        </tr>
+        <tr><th>막기</th>
+          <td class="m mid" title="튕겨내기, 적 균형 -4">막아냄</td>
+          <td class="m mid" title="55% 데미지 받음">뚫림</td>
+          <td class="m none" title="정적">무</td>
+          <td class="m none" title="둘 다 빠짐">무</td>
+          <td class="m none" title="빈손">무</td>
+          <td class="m lose" title="밀려남">패</td>
+        </tr>
+        <tr><th>회피</th>
+          <td class="m win" title="흘려냄">승</td>
+          <td class="m win" title="적 균형 -5">승</td>
+          <td class="m none" title="둘 다 빠짐">무</td>
+          <td class="m none" title="둘 다 회피">무</td>
+          <td class="m none" title="빈손">무</td>
+          <td class="m none" title="허공">무</td>
+        </tr>
+        <tr><th>받아치기</th>
+          <td class="m win" title="반격으로 베어냄">승</td>
+          <td class="m win" title="비틀어 베어냄">승</td>
+          <td class="m none" title="둘 다 받기">무</td>
+          <td class="m none" title="빈손">무</td>
+          <td class="m none" title="빈틈만">무</td>
+          <td class="m lose" title="적이 밀어냄">패</td>
+        </tr>
+        <tr><th>밀치기</th>
+          <td class="m lose" title="공격에 베임">패</td>
+          <td class="m lose-crit" title="찌르기 치명">치명패</td>
+          <td class="m win" title="방어 밀쳐냄">승</td>
+          <td class="m none" title="허공">무</td>
+          <td class="m win" title="받아치기 무력화">승</td>
+          <td class="m mut" title="둘 다 휘청">상호</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="matchup-note">
+      ※ 같은 거리에서 둘 다 사거리 안일 때 적용. 사거리 밖이면 빗나감.<br>
+      관통(흘려베기)·치명·연속 등 특수 효과는 별도.
+    </div>
+    <button class="commit-btn" onclick="document.getElementById('modal-matchup').classList.add('hidden')" style="margin-top: 12px;">닫기</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ============================================================
+// DATA LOADER — 모든 게임 데이터는 ./data/*.json에서 로드
+// ============================================================
+// COMMANDS, CLASSES, ENEMIES, WEAPONS, MAP, SHOP_POOL, INTENT_*는
+// loadGameData() 호출 후 채워진다. 이 변수들을 const로 두지 않고 let으로 둔 이유.
+
+let COMMANDS = {};
+let CLASSES = {};
+let ENEMIES = {};
+let WEAPONS = {};
+let MAP = [];
+let SHOP_POOL = [];
+let BALANCE = {};
+let INTENT_KO = {};
+let INTENT_DIR = {};
+let INTENT_COST = {};
+let DIST_LABELS = ['충돌', '밀착', '근거리', '중거리', '원거리', '최원거리'];
+
+async function loadGameData() {
+  const files = ['commands', 'classes', 'enemies', 'weapons', 'map', 'balance'];
+  const data = {};
+  // 각 파일별로: localStorage에 사용자 수정본이 있으면 그걸, 없으면 fetch.
+  for (const name of files) {
+    const local = localStorage.getItem(`ikkiuchi-data-${name}`);
+    if (local) {
+      try { data[name] = stripComments(JSON.parse(local)); continue; }
+      catch (e) { console.warn(`Local override for ${name} corrupt, falling back to file.`); }
+    }
+    const r = await fetch(`./data/${name}.json`);
+    if (!r.ok) throw new Error(`Failed to load data/${name}.json (${r.status})`);
+    data[name] = stripComments(await r.json());
+  }
+
+  COMMANDS = data.commands;
+  CLASSES = data.classes;
+  ENEMIES = data.enemies;
+  WEAPONS = data.weapons;
+  MAP = data.map.stages;
+  SHOP_POOL = data.map.shopPool;
+  BALANCE = data.balance;
+  INTENT_KO = data.balance.intent.labels;
+  INTENT_DIR = data.balance.intent.directions;
+  INTENT_COST = data.balance.intent.costs;
+  // ADMIN이 수정 후 다시 적용할 수 있도록 loadGameData를 재사용 가능하게 export
+  window._GAMEDATA = data;
+  return data;
+}
+
+// _comment 필드를 재귀적으로 제거 — JSON에 자유롭게 주석 달 수 있게.
+function stripComments(obj) {
+  if (Array.isArray(obj)) return obj.map(stripComments);
+  if (obj && typeof obj === 'object') {
+    const out = {};
+    for (const k of Object.keys(obj)) {
+      if (k === '_comment') continue;
+      out[k] = stripComments(obj[k]);
+    }
+    return out;
+  }
+  return obj;
+}
+
+// 원본 파일을 다시 읽어 localStorage 무시하고 반환 — admin "리셋"용.
+async function loadOriginalData(name) {
+  const r = await fetch(`./data/${name}.json?t=${Date.now()}`);  // 캐시 방지
+  if (!r.ok) throw new Error(`Failed to load data/${name}.json (${r.status})`);
+  return await r.json();  // 원본은 _comment 그대로 (편집 화면에서 보여줄 수 있게)
+}
+
+// ============================================================
+// GAME STATE
+// ============================================================
+const game = {
+  phase: 'class-select',
+  classId: null,
+  player: null,
+  deck: [],
+  cmdLevels: {},
+  cmdHistory: [],
+  currentStage: 0,
+  stageCompleted: [false, false, false, false, false],
+  combat: null,
+};
+
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const roll = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+// 사거리 표시: 'all'은 전 거리, 배열은 정수의 모음
+function rangeLabel(ranges) {
+  if (ranges === 'all') return '전 거리';
+  // 연속 구간이면 a~b로 표현, 아니면 콤마 구분
+  const sorted = [...ranges].sort((a,b)=>a-b);
+  const isContiguous = sorted.every((v, i) => i === 0 || v === sorted[i-1] + 1);
+  if (isContiguous && sorted.length > 1) return `거리 ${sorted[0]}~${sorted[sorted.length-1]}`;
+  return `거리 ${sorted.join(',')}`;
+}
+
+// 사거리 단축 라벨 (커맨드 버튼 안)
+function rangeLabelShort(ranges) {
+  if (ranges === 'all') return '전';
+  const sorted = [...ranges].sort((a,b)=>a-b);
+  const isContiguous = sorted.every((v, i) => i === 0 || v === sorted[i-1] + 1);
+  if (isContiguous && sorted.length > 1) return `${sorted[0]}~${sorted[sorted.length-1]}`;
+  return sorted.join(',');
+}
+
+function rangeIncludes(ranges, dist) {
+  if (ranges === 'all') return true;
+  return ranges.includes(dist);
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+  game.phase = name;
+}
+
+// ============================================================
+// CLASS SELECT
+// ============================================================
+function renderClassSelect() {
+  const grid = $('class-grid');
+  grid.innerHTML = '';
+  Object.values(CLASSES).forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'class-card';
+    card.onclick = () => selectClass(c.id);
+    card.innerHTML = `
+      <div class="class-emblem"><svg><use href="#${c.emblem}"/></svg></div>
+      <div class="class-name">${c.name}</div>
+      <div class="class-meta">${c.culture}</div>
+      <div class="class-blurb">${c.blurb}</div>
+      <div class="class-stats">
+        <div class="class-stat"><div class="class-stat-num">${c.hp}</div><div class="class-stat-label">HP</div></div>
+        <div class="class-stat"><div class="class-stat-num">${c.bal}</div><div class="class-stat-label">균형</div></div>
+        <div class="class-stat"><div class="class-stat-num">${c.sta}</div><div class="class-stat-label">기력</div></div>
+        <div class="class-stat"><div class="class-stat-num">${(c.evade*100)|0}%</div><div class="class-stat-label">회피</div></div>
+        <div class="class-stat"><div class="class-stat-num">${c.gold}</div><div class="class-stat-label">금</div></div>
+      </div>
+      <div class="class-mech-tag">고유 능력</div>
+      <div class="class-mech-name">${c.mechanic}</div>
+      <div class="class-mech-desc">${c.mechanicDesc}</div>
+      <div class="class-deck">
+        ${c.deck.map(cid => `<div class="class-deck-icon" title="${COMMANDS[cid].name}"><svg><use href="#${COMMANDS[cid].icon}"/></svg></div>`).join('')}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function selectClass(id) {
+  const c = CLASSES[id];
+  game.classId = id;
+  game.player = {
+    hp: c.hp, maxHp: c.hp,
+    bal: c.bal, maxBal: c.bal,
+    sta: c.sta, maxSta: 10,
+    gold: c.gold,
+    evade: c.evade,
+  };
+  game.deck = [...c.deck];
+  game.cmdLevels = {};
+  c.deck.forEach(cid => game.cmdLevels[cid] = 0);
+  game.cmdHistory = [];
+  // 무기는 클래스 시작 무기를 복제해 들고 다님 (강화로 변하므로)
+  const baseWeapon = WEAPONS[c.weapon];
+  game.weapon = {
+    id: c.weapon,
+    name: baseWeapon.name,
+    damageBonus: baseWeapon.damageBonus,
+    balanceBonus: baseWeapon.balanceBonus,
+    tier: baseWeapon.tier,
+    maxDurability: baseWeapon.maxDurability || 100,
+    durability: baseWeapon.maxDurability || 100,
+    broken: false,
+  };
+  game.currentStage = 0;
+  game.stageCompleted = [false, false, false, false, false];
+  enterMap();
+}
+
+// ============================================================
+// MAP
+// ============================================================
+function enterMap() {
+  const c = CLASSES[game.classId];
+  $('map-title').textContent = '일\u00A0기\u00A0토';
+  $('map-en').textContent = c.nameEn;
+  $('map-class-name').textContent = c.name;
+  $('map-emblem-svg').innerHTML = `<use href="#${c.emblem}"/>`;
+  $('map-hp').textContent = `${game.player.hp}/${game.player.maxHp}`;
+  $('map-gold').textContent = game.player.gold;
+  $('map-deck-link').textContent = `덱 보기 (${game.deck.length})`;
+  renderMap();
+  showScreen('map');
+}
+
+function renderMap() {
+  const container = $('map-container');
+  container.innerHTML = '';
+
+  const idx = game.currentStage;
+  const stage = MAP[idx];
+
+  // === 현재 스테이지 헤더 ===
+  const stageHead = document.createElement('div');
+  stageHead.className = 'stage-head';
+  stageHead.innerHTML = `
+    <div class="stage-head-num">스테이지 ${idx + 1} / ${MAP.length}</div>
+    <div class="stage-head-progress">
+      ${MAP.map((_, i) => `<span class="stage-dot${i < idx ? ' done' : i === idx ? ' here' : ''}"></span>`).join('')}
+    </div>
+  `;
+  container.appendChild(stageHead);
+
+  if (idx >= MAP.length) {
+    // 모든 스테이지 완료 (방어용)
+    return;
+  }
+
+  // === 결투 노드 (필수, 강조) ===
+  const combatNode = stage.combat;
+  const combatRow = document.createElement('div');
+  combatRow.className = 'map-stage-row primary';
+  combatRow.appendChild(makeMapNode(combatNode, idx, true, false, false));
+  container.appendChild(combatRow);
+
+  // === 구분선 ===
+  const sep = document.createElement('div');
+  sep.className = 'map-section-label';
+  sep.innerHTML = `<span>들를 곳</span><span class="en">VISIT</span>`;
+  container.appendChild(sep);
+
+  // === 보너스 노드 3개 (항상 가능) ===
+  const bonusRow = document.createElement('div');
+  bonusRow.className = 'map-stage-row';
+  bonusRow.appendChild(makeMapNode({ type: 'shop',  name: '상점',  isVisit: true }, idx, true, false, false));
+  bonusRow.appendChild(makeMapNode({ type: 'forge', name: '대장간', isVisit: true }, idx, true, false, false));
+  bonusRow.appendChild(makeMapNode({ type: 'dojo',  name: '수련장', isVisit: true }, idx, true, false, false));
+  container.appendChild(bonusRow);
+}
+
+function makeMapNode(node, stageIdx, isCurrent, isCompleted, isLocked) {
+  const div = document.createElement('div');
+  div.className = 'map-node';
+  if (isCurrent) div.classList.add('current');
+  if (isCompleted) div.classList.add('completed');
+  if (isLocked) div.classList.add('disabled');
+  if (node.isVisit) div.classList.add('visit');
+
+  let iconId, iconClass, type, detail;
+  if (node.type === 'combat') {
+    const e = ENEMIES[node.enemy];
+    iconId = node.isBoss ? 'i-boss' : 'i-combat';
+    iconClass = node.isBoss ? 'boss' : '';
+    type = node.isBoss ? '보스' : (node.isElite ? '정예 · ELITE' : '결투 · COMBAT');
+    detail = `${e.name} · HP ${e.hp} · 보상 ${e.goldReward}금`;
+  } else if (node.type === 'shop') {
+    iconId = 'i-shop'; iconClass = 'shop'; type = '상점 · SHOP';
+    detail = '새 기예 · 회복약 구매';
+  } else if (node.type === 'forge') {
+    iconId = 'i-forge'; iconClass = 'forge'; type = '대장간 · FORGE';
+    detail = `${game.weapon ? game.weapon.name : '무기'} 강화 (모든 공격 +)`;
+  } else if (node.type === 'dojo') {
+    iconId = 'i-dojo'; iconClass = 'dojo'; type = '수련장 · DOJO';
+    detail = '특정 기예의 숙련도 강화';
+  }
+
+  div.innerHTML = `
+    <div class="map-node-icon ${iconClass}"><svg><use href="#${iconId}"/></svg></div>
+    <div class="map-node-info">
+      <div class="map-node-type">${type}</div>
+      <div class="map-node-name">${node.name}</div>
+      <div class="map-node-detail">${detail}</div>
+    </div>
+  `;
+
+  if (isCurrent && !isLocked && !isCompleted) {
+    div.onclick = () => enterNode(node, stageIdx);
+  }
+  return div;
+}
+
+function enterNode(node, stageIdx) {
+  if (node.type === 'combat') enterCombat(node.enemy, stageIdx);
+  else if (node.type === 'shop') enterShop();
+  else if (node.type === 'forge') enterForge();
+  else if (node.type === 'dojo') enterDojo();
+}
+
+$('map-deck-link').onclick = () => {
+  const list = $('deck-modal-list');
+  list.innerHTML = game.deck.map(cid => {
+    const c = COMMANDS[cid];
+    const lvl = game.cmdLevels[cid] || 0;
+    const lvlMark = lvl > 0 ? `<span class="lvl">+${lvl}</span>` : '';
+    let meta = `${rangeLabel(c.ranges)} · 기력 ${c.cost}`;
+    if (c.hp) meta += ` · HP ${c.hp[0]+lvl}~${c.hp[1]+lvl}`;
+    if (c.bal) meta += ` · 균형 ${c.bal[0]}~${c.bal[1]}`;
+    if (c.counter) meta += ` · 반격 ${c.counter[0]}~${c.counter[1]}`;
+    return `
+      <div class="deck-modal-row">
+        <div class="deck-modal-icon"><svg><use href="#${c.icon}"/></svg></div>
+        <div class="deck-modal-info">
+          <div class="deck-modal-name">${c.name}${lvlMark}</div>
+          <div class="deck-modal-meta">${meta}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  $('modal-deck').classList.remove('hidden');
+};
+
+// ============================================================
+// COMBAT
+// ============================================================
+function enterCombat(enemyId, stageIdx) {
+  const e = ENEMIES[enemyId];
+  const mapSize = e.mapSize || 6;
+  // 그대는 1번 칸, 적은 mapSize-2번 칸. 시작 거리 = (mapSize-2) - 1 = mapSize - 3.
+  const startPlayerPos = 1;
+  const startEnemyPos = mapSize - 2;
+  const startDist = startEnemyPos - startPlayerPos;
+  game.combat = {
+    enemyId,
+    stageIdx,
+    mapSize,
+    enemy: {
+      hp: e.hp, maxHp: e.hp, bal: e.bal, maxBal: e.bal,
+      sta: e.sta, maxSta: 10, evade: e.evade, broken: false,
+      // 적도 무기 — 단순화해서 dura 100 기본
+      weaponDura: 100, weaponMaxDura: 100, weaponBroken: false, disarmed: false,
+    },
+    playerPos: startPlayerPos,
+    enemyPos: startEnemyPos,
+    distance: startDist,
+    turn: 1,
+    selectedIntent: 'hold',
+    selectedCommand: null,
+    processing: false,
+    playerLimits: {},
+    enemyLimits: {},
+    lastDistance: startDist,
+    advancedThisTurn: false,
+    retreatedThisTurn: false,
+    playerBroken: false,
+    // 검 놓침 상태
+    playerDisarmed: false,
+  };
+
+  game.deck.forEach(cid => {
+    const c = COMMANDS[cid];
+    if (c.limit) game.combat.playerLimits[cid] = c.limit;
+  });
+  e.deck.forEach(cid => {
+    const c = COMMANDS[cid];
+    if (c.limit) {
+      game.combat.enemyLimits[cid] = (game.combat.enemyLimits[cid] || 0) + c.limit;
+    }
+  });
+
+  game.player.bal = game.player.maxBal;
+  game.player.sta = 5;
+
+  // Set enemy panel
+  $('enemy-name').textContent = e.name;
+  $('enemy-tag').textContent = `Stage ${stageIdx+1}${e.isBoss ? ' · BOSS' : (ENEMIES[enemyId].isElite ? ' · ELITE' : '')}`;
+  // Player panel
+  const cls = CLASSES[game.classId];
+  $('player-name').textContent = cls.name;
+  $('player-emblem-svg').innerHTML = `<use href="#${cls.emblem}"/>`;
+
+  // Reset turn
+  $('turn-num').textContent = '1';
+  $('log').innerHTML = `<div class="log-entry" style="opacity:1">${e.flavor}</div>`;
+  ['clash-player','clash-vs','clash-enemy'].forEach(id => $(id).classList.remove('show'));
+  $('arrow-player').classList.remove('show');
+  $('arrow-enemy').classList.remove('show');
+
+  // Reset intent button
+  document.querySelectorAll('#intent-row .jbtn').forEach(b => b.classList.toggle('selected', b.dataset.intent === 'hold'));
+  $('joystick-hint').textContent = '유지 · 0';
+
+  renderCombatStats();
+  buildDistanceTrack();
+  renderDistance();
+  renderCommands();
+  renderMechanicDisplay();
+  showScreen('combat');
+}
+
+function renderCombatStats() {
+  const p = game.player, e = game.combat.enemy;
+  $('player-hp').textContent = `${p.hp}/${p.maxHp}`;
+  $('player-bal').textContent = `${p.bal}/${p.maxBal}`;
+  $('player-sta').textContent = `${p.sta}/${p.maxSta}`;
+  $('player-hp-bar').style.width = (p.hp/p.maxHp*100)+'%';
+  $('player-bal-bar').style.width = (p.bal/p.maxBal*100)+'%';
+  $('player-sta-bar').style.width = (p.sta/p.maxSta*100)+'%';
+  $('enemy-hp').textContent = `${e.hp}/${e.maxHp}`;
+  $('enemy-bal').textContent = `${e.bal}/${e.maxBal}`;
+  $('enemy-sta').textContent = `${e.sta}/${e.maxSta}`;
+  $('enemy-hp-bar').style.width = (e.hp/e.maxHp*100)+'%';
+  $('enemy-bal-bar').style.width = (e.bal/e.maxBal*100)+'%';
+  $('enemy-sta-bar').style.width = (e.sta/e.maxSta*100)+'%';
+
+  // 무기 게이지 — 그대
+  if (game.weapon) {
+    const pct = game.weapon.broken ? 0 : Math.round(game.weapon.durability / game.weapon.maxDurability * 100);
+    const fillEl = $('player-weapon-fill');
+    if (fillEl) fillEl.style.width = pct + '%';
+    const pctEl = $('player-weapon-pct');
+    if (pctEl) pctEl.textContent = game.weapon.broken ? '부서짐!' : pct + '%';
+    const nameEl = $('player-weapon-name');
+    if (nameEl) nameEl.textContent = game.weapon.name + (game.weapon.damageBonus ? ` +${game.weapon.damageBonus}` : '');
+    const barEl = $('player-weapon-bar');
+    if (barEl) barEl.classList.toggle('broken', game.weapon.broken);
+  }
+  // 무기 게이지 — 적
+  const ePct = e.weaponBroken ? 0 : Math.round(e.weaponDura / e.weaponMaxDura * 100);
+  const eFill = $('enemy-weapon-fill');
+  if (eFill) eFill.style.width = ePct + '%';
+  const ePctEl = $('enemy-weapon-pct');
+  if (ePctEl) ePctEl.textContent = e.weaponBroken ? '부서짐!' : ePct + '%';
+  const eBarEl = $('enemy-weapon-bar');
+  if (eBarEl) eBarEl.classList.toggle('broken', e.weaponBroken);
+
+  // 검 놓침 배지
+  const disarmBadge = $('player-disarm-badge');
+  if (disarmBadge) disarmBadge.classList.toggle('active', !!game.combat.playerDisarmed);
+
+  document.querySelectorAll('.broken-badge').forEach(el => el.remove());
+  if (game.combat.playerBroken) addBrokenBadge('player-card');
+  if (game.combat.enemy.broken) addBrokenBadge('enemy-card');
+}
+
+function addBrokenBadge(cardId) {
+  const div = document.createElement('div');
+  div.className = 'broken-badge';
+  div.textContent = '무방비';
+  $(cardId).appendChild(div);
+}
+
+// 거리 정성 라벨: 거리 dist (= enemyPos-playerPos)에 대한 짧은 한국어 표현
+function distanceLabel(dist, mapSize) {
+  if (dist <= 1) return '밀착';
+  if (dist === 2) return '근거리';
+  // 중간 ~ 최원거리는 maxDist에 따라 비례
+  const maxDist = mapSize - 1; // 그대 0 / 적 max
+  if (dist <= Math.ceil(maxDist * 0.5)) return '중거리';
+  if (dist <= maxDist - 1) return '원거리';
+  return '최원거리';
+}
+
+function buildDistanceTrack() {
+  // 적 데이터 변경 시 (combat 시작 시) 1회 호출. zone DOM을 mapSize에 맞게 빌드.
+  const ms = game.combat.mapSize;
+  const zonesEl = $('track-zones');
+  zonesEl.style.gridTemplateColumns = `repeat(${ms}, 1fr)`;
+  let html = '';
+  for (let i = 0; i < ms; i++) {
+    html += `<div class="track-zone" data-pos="${i}"><span class="track-zone-label">${i}</span></div>`;
+  }
+  zonesEl.innerHTML = html;
+}
+
+function renderDistance() {
+  const pPos = game.combat.playerPos;
+  const ePos = game.combat.enemyPos;
+  const dist = game.combat.distance;
+  const ms = game.combat.mapSize;
+
+  // Highlight zones occupied by warriors
+  document.querySelectorAll('.track-zone').forEach(z => {
+    const pos = parseInt(z.dataset.pos, 10);
+    z.classList.toggle('active', pos === pPos || pos === ePos);
+    z.classList.toggle('player-here', pos === pPos);
+    z.classList.toggle('enemy-here', pos === ePos);
+  });
+  $('distance-current').textContent = `거리 ${dist} · ${distanceLabel(dist, ms)}`;
+
+  // Each zone is 1/ms of width. Center figure inside its zone.
+  const zonePct = 100 / ms;
+  const figW = 20;
+  const playerCenterPct = (pPos + 0.5) * zonePct;
+  const enemyCenterPct = (ePos + 0.5) * zonePct;
+  $('fig-player').style.left = `calc(${playerCenterPct}% - ${figW/2}px)`;
+  $('fig-enemy').style.left = `calc(${enemyCenterPct}% - ${figW/2}px)`;
+}
+
+function renderMechanicDisplay() {
+  const cls = CLASSES[game.classId];
+  let text = '';
+  if (cls.id === 'ronin') {
+    if (game.cmdHistory.length > 0) {
+      text = `잔심 · 최근: ${game.cmdHistory.map(c => COMMANDS[c].name).join(', ')}`;
+    } else {
+      text = `잔심 · 최근: ―`;
+    }
+  } else if (cls.id === 'dobu') {
+    text = `직전 거리: ${DIST_LABELS[game.combat.lastDistance]} → ${DIST_LABELS[game.combat.distance]}`;
+  } else if (cls.id === 'merchant') {
+    text = `은전 자루 활성`;
+  }
+  $('mechanic-display').textContent = text;
+}
+
+function isCommandUsable(cid, who) {
+  const c = COMMANDS[cid];
+  const dist = game.combat.distance;
+  if (!rangeIncludes(c.ranges, dist)) return false;
+  const stats = who === 'player' ? game.player : game.combat.enemy;
+  if (c.cost > stats.sta) return false;
+  const limits = who === 'player' ? game.combat.playerLimits : game.combat.enemyLimits;
+  if (c.limit && (limits[cid] === undefined || limits[cid] <= 0)) return false;
+  const broken = who === 'player' ? game.combat.playerBroken : game.combat.enemy.broken;
+  if (broken && c.cost >= 4) return false;
+  return true;
+}
+
+// 그대 의도만 적용했을 때 예상 거리 (적은 hold 가정)
+// 그대 advance: playerPos+1, retreat: playerPos-1, hold: 그대로
+// 적은 hold 가정 → enemyPos 그대로
+// 단 충돌 방지 + 맵 끝 클램프
+function predictedDistanceForIntent(intent) {
+  if (!game.combat) return null;
+  const ms = game.combat.mapSize;
+  const maxIdx = ms - 1;
+  const pDelta = INTENT_DIR[intent] || 0;
+  let newPlayer = clamp(game.combat.playerPos + pDelta, 0, maxIdx);
+  const enemy = game.combat.enemyPos;
+  if (newPlayer >= enemy) newPlayer = enemy - 1; // 충돌 방지 (적이 hold라 가정)
+  newPlayer = clamp(newPlayer, 0, maxIdx);
+  return enemy - newPlayer;
+}
+
+// 카드 상태 분류:
+// 'usable'    → 지금 거리에서 그대로 쓸 수 있음
+// 'reachable' → 지금 거리에선 안 되지만, 선택한 의도대로 움직이면 사거리 안에 들어옴
+// 'outrange'  → 의도와 무관하게 사거리 밖 (한 턴 내 도달 불가)
+// 'noresource'→ 사거리는 맞지만 기력·횟수·무방비 제약으로 못 씀
+function classifyCommand(cid) {
+  const c = COMMANDS[cid];
+  const curDist = game.combat.distance;
+  const intent = game.combat.selectedIntent;
+  const predDist = predictedDistanceForIntent(intent);
+  const intentCost = INTENT_COST[intent] || 0;
+  const totalCost = c.cost + intentCost; // 이동 + 기예 합산
+
+  // 검 놓친 상태면 허용된 기예만 사용 가능
+  if (game.combat.playerDisarmed) {
+    const allowed = (BALANCE.disarm && BALANCE.disarm.allowedCommands) || ['push'];
+    if (!allowed.includes(cid)) return 'noresource';
+  }
+
+  // 자원 체크 먼저 (거리와 무관)
+  const stats = game.player;
+  const lacksSta = totalCost > stats.sta;
+  const overLimit = c.limit && (game.combat.playerLimits[cid] === undefined || game.combat.playerLimits[cid] <= 0);
+  const brokenBlock = game.combat.playerBroken && c.cost >= 4;
+  const noResource = lacksSta || overLimit || brokenBlock;
+
+  const inRangeNow = rangeIncludes(c.ranges, curDist);
+  const inRangePredicted = rangeIncludes(c.ranges, predDist);
+
+  if (inRangeNow && !noResource) return 'usable';
+  if (noResource && (inRangeNow || inRangePredicted)) return 'noresource';
+  if (!inRangeNow && inRangePredicted && !noResource) return 'reachable';
+  return 'outrange';
+}
+
+function renderCommands() {
+  const grid = $('command-grid');
+  grid.innerHTML = '';
+  const curDist = game.combat.distance;
+  game.deck.forEach(cid => {
+    const c = COMMANDS[cid];
+    const lvl = game.cmdLevels[cid] || 0;
+    const state = classifyCommand(cid);
+    // 의도 적용 후 사거리 안에 들어오는 카드도 클릭 가능 — 이동+공격 동시 실행
+    const clickable = (state === 'usable' || state === 'reachable');
+
+    const btn = document.createElement('button');
+    btn.className = 'command-btn state-' + state;
+    btn.dataset.cmd = cid;
+    btn.dataset.clickable = clickable ? '1' : '0';
+    if (game.combat.selectedCommand === cid) btn.classList.add('selected');
+
+    if (game.classId === 'ronin' && !game.cmdHistory.includes(cid) && c.type !== 'rest' && c.type !== 'feint') {
+      btn.classList.add('bonus');
+    }
+
+    let costLabel;
+    if (c.staGain) costLabel = `<span class="command-cost recover">+${c.staGain}</span>`;
+    else if (c.cost >= 4) costLabel = `<span class="command-cost expensive">${c.cost}</span>`;
+    else costLabel = `<span class="command-cost">${c.cost}</span>`;
+
+    const limitLabel = c.limit ? `<span class="command-limit">${game.combat.playerLimits[cid] || 0}/${c.limit}</span>` : '';
+    const lvlLabel = lvl > 0 ? `<span class="command-tag">+${lvl}</span>` : '';
+
+    // 미니 거리 게이지: 6칸(0~5), 사거리 안 칸은 진하게, 현재 위치는 마커
+    const inRange = (i) => rangeIncludes(c.ranges, i);
+    let gauge = '<span class="command-gauge">';
+    for (let i = 0; i <= 5; i++) {
+      const cls = ['g-cell'];
+      if (inRange(i)) cls.push('g-in');
+      if (i === curDist) cls.push('g-here');
+      gauge += `<span class="${cls.join(' ')}"></span>`;
+    }
+    gauge += '</span>';
+
+    let tip = `${c.name}`;
+    if (c.hp) tip += ` · HP ${c.hp[0]+lvl}~${c.hp[1]+lvl}`;
+    if (c.bal) tip += ` · 균형 ${c.bal[0]}~${c.bal[1]}`;
+    if (c.counter) tip += ` · 반격 ${c.counter[0]}~${c.counter[1]}`;
+    if (c.staGain) tip += ` · 기력 +${c.staGain}`;
+    if (c.balGain) tip += ` · 균형 +${c.balGain}`;
+    if (c.goldGain) tip += ` · 금화 +${c.goldGain}`;
+    if (c.bonusOnAdvance) tip += ` · 진입시 +${c.bonusOnAdvance*100|0}%`;
+    if (c.pierce) tip += ` · 회피·받아치기 무시`;
+    // 우선순위 표시
+    const speed = c.speed ?? 2;
+    const speedTxt = ['즉발', '빠름', '보통', '느림', '매우 느림'][speed] || '?';
+    tip += ` · 속도: ${speedTxt}`;
+    // Add state hint in tip
+    if (state === 'reachable') tip += ` · ${INTENT_KO[game.combat.selectedIntent]}와 동시 실행`;
+    else if (state === 'noresource') {
+      if (game.combat.playerDisarmed) tip += ` · 검 놓침 - 사용 불가`;
+      else if (c.cost > game.player.sta) tip += ` · 기력 부족`;
+      else if (c.limit) tip += ` · 횟수 소진`;
+      else if (game.combat.playerBroken) tip += ` · 무방비 상태`;
+    }
+    else if (state === 'outrange') tip += ` · 거리 ${rangeLabelShort(c.ranges)}`;
+
+    // 속도 점 (카드 좌상단)
+    const speedDot = `<span class="speed-dot speed-${speed}" title="${speedTxt}"></span>`;
+
+    btn.innerHTML = `
+      ${speedDot}
+      ${costLabel}
+      ${limitLabel}
+      <svg class="command-icon"><use href="#${c.icon}"/></svg>
+      <span class="command-name">${c.name}</span>
+      ${gauge}
+      ${lvlLabel}
+      <span class="tip">${tip}</span>
+    `;
+    btn.onclick = () => {
+      if (!clickable) return;
+      if (game.combat.processing) return;
+      game.combat.processing = true;
+      game.combat.selectedCommand = cid;
+      btn.classList.add('selected');
+      resolveTurn();
+    };
+    grid.appendChild(btn);
+  });
+}
+
+document.querySelectorAll('#intent-row .jbtn').forEach(btn => {
+  btn.onclick = () => {
+    if (game.combat && game.combat.processing) return;
+    document.querySelectorAll('#intent-row .jbtn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    if (game.combat) {
+      game.combat.selectedIntent = btn.dataset.intent;
+      $('joystick-hint').textContent = `${INTENT_KO[btn.dataset.intent]} · ${INTENT_COST[btn.dataset.intent]}`;
+      renderCommands(); // re-classify cards based on new intent
+    }
+  };
+});
+
+// ============================================================
+// AI
+// ============================================================
+function aiChoose() {
+  const e = game.combat.enemy;
+  const p = game.player;
+  const enemyData = ENEMIES[game.combat.enemyId];
+  const dist = game.combat.distance;
+
+  const usable = enemyData.deck.filter(cid => isCommandUsable(cid, 'enemy'));
+  if (usable.length === 0) return { command: 'dodge', intent: 'hold' };
+
+  const weights = {};
+  usable.forEach(c => weights[c] = 1);
+
+  const style = enemyData.style;
+  if (style === 'aggressive') {
+    if (weights['cleave']) weights['cleave'] += 3;
+    if (weights['slash']) weights['slash'] += 2;
+    if (weights['lunge']) weights['lunge'] += 2;
+  } else if (style === 'kiter') {
+    if (weights['shuriken']) weights['shuriken'] += 4;
+    if (weights['thrust']) weights['thrust'] += 2;
+    if (weights['dodge']) weights['dodge'] += 2;
+  } else if (style === 'brute') {
+    if (weights['cleave']) weights['cleave'] += 3;
+    if (weights['lunge']) weights['lunge'] += 3;
+    if (weights['balancebreak']) weights['balancebreak'] += 2;
+  } else if (style === 'evasive') {
+    if (weights['dodge']) weights['dodge'] += 3;
+    if (weights['parry']) weights['parry'] += 2;
+    if (weights['feint']) weights['feint'] += 2;
+    if (weights['sliplash']) weights['sliplash'] += 2;
+  } else if (style === 'adaptive') {
+    const recentAttacks = game.cmdHistory.filter(c => COMMANDS[c] && (COMMANDS[c].type === 'attack' || COMMANDS[c].type === 'thrust')).length;
+    if (recentAttacks >= 2) {
+      if (weights['parry']) weights['parry'] += 3;
+      if (weights['dodge']) weights['dodge'] += 2;
+    } else {
+      if (weights['cleave']) weights['cleave'] += 2;
+      if (weights['slash']) weights['slash'] += 2;
+    }
+    if (game.combat.turn % 5 === 0 && weights['iai']) weights['iai'] += 5;
+  }
+
+  if (e.hp < e.maxHp * 0.35) {
+    if (weights['dodge']) weights['dodge'] += 3;
+    if (weights['block']) weights['block'] += 2;
+    if (weights['parry']) weights['parry'] += 2;
+  }
+  if (e.sta <= 1) {
+    if (weights['dodge']) weights['dodge'] += 4;
+    if (weights['rest']) weights['rest'] += 4;
+    Object.keys(weights).forEach(k => {
+      if (COMMANDS[k].cost > 1) delete weights[k];
+    });
+  }
+  if (p.bal < p.maxBal * 0.35 || game.combat.playerBroken) {
+    if (weights['lunge']) weights['lunge'] += 3;
+    if (weights['cleave']) weights['cleave'] += 2;
+  }
+
+  const total = Object.values(weights).reduce((a,b)=>a+b, 0);
+  let r = Math.random() * total;
+  let chosen = Object.keys(weights)[0];
+  for (const k of Object.keys(weights)) {
+    r -= weights[k];
+    if (r <= 0) { chosen = k; break; }
+  }
+
+  const c = COMMANDS[chosen];
+  let intent = 'hold';
+  if (c.ranges === 'all') {
+    intent = 'hold';
+  } else if (rangeIncludes(c.ranges, dist)) {
+    // Already in good range
+    intent = 'hold';
+  } else {
+    // Find direction toward range
+    const sorted = [...c.ranges].sort((a,b)=>a-b);
+    const minR = sorted[0], maxR = sorted[sorted.length-1];
+    if (dist > maxR) intent = 'advance'; // need to close in
+    else if (dist < minR) intent = 'retreat'; // need to back off
+  }
+  if (style === 'kiter' && Math.random() < 0.4 && dist < 5) intent = 'retreat';
+  if (style === 'brute' && dist > 1 && Math.random() < 0.5) intent = 'advance';
+  if (Math.random() < 0.15) intent = pick(['advance','hold','retreat']);
+
+  return { command: chosen, intent };
+}
+
+// ============================================================
+// COMBAT RESOLUTION
+// ============================================================
+// 그대는 항상 좌측, 적은 항상 우측. 의도에 따라 각자 한 칸 이동.
+// 그대 advance: playerPos +1 (적 쪽으로). retreat: playerPos -1.
+// 적 advance: enemyPos -1 (그대 쪽으로). retreat: enemyPos +1.
+// 맵 범위 0~5. 두 무사가 같은 칸에 못 겹침(최소 거리 1).
+// 5단계 의도(advance2/advance/hold/retreat/retreat2)와 가변 맵 크기.
+// 그대 위치 변화량 = INTENT_DIR (양수=오른쪽=적쪽으로 전진).
+// 적 입장에선 부호 반대 (적은 우측에 있으니 advance면 좌측으로 이동).
+function resolvePositions(curPlayerPos, curEnemyPos, pIntent, eIntent, mapSize) {
+  const maxIdx = mapSize - 1;
+  const pDelta = INTENT_DIR[pIntent];           // 그대: + = 오른쪽
+  const eDelta = -INTENT_DIR[eIntent];          // 적: 부호 반대 (advance면 -)
+  let newPlayer = clamp(curPlayerPos + pDelta, 0, maxIdx);
+  let newEnemy = clamp(curEnemyPos + eDelta, 0, maxIdx);
+
+  // 충돌 방지 — 둘이 같은 칸이거나 그대가 적을 지나치면 안 됨 (최소 거리 1)
+  if (newPlayer >= newEnemy) {
+    // 둘 다 가까워지려는 경우: 양보. 적의 의도가 advance(좌측)이면 eDelta<0
+    if (pDelta > 0 && eDelta < 0) {
+      // 둘 다 진입 — 가능한 만큼만 좁힘. 새 거리 = max(1, oldDist - 1)
+      const oldDist = curEnemyPos - curPlayerPos;
+      if (oldDist <= 1) {
+        // 이미 밀착, 더 못 좁힘
+        newPlayer = curPlayerPos;
+        newEnemy = curEnemyPos;
+      } else {
+        // 한 칸만 좁힘 — 그대만 한 칸 이동
+        newPlayer = curPlayerPos + 1;
+        newEnemy = curEnemyPos;
+      }
+    } else if (pDelta > 0) {
+      // 그대만 전진하다 적과 부딪히려 함 — 적 한 칸 앞에서 정지
+      newPlayer = Math.min(newPlayer, newEnemy - 1);
+    } else if (eDelta < 0) {
+      // 적이 그대 쪽으로 들어오다 부딪히려 함 — 그대 한 칸 옆에서 정지
+      newEnemy = Math.max(newEnemy, newPlayer + 1);
+    }
+  }
+  // 한 번 더 클램프 (안전망)
+  newPlayer = clamp(newPlayer, 0, maxIdx);
+  newEnemy = clamp(newEnemy, 0, maxIdx);
+  return { playerPos: newPlayer, enemyPos: newEnemy, distance: newEnemy - newPlayer };
+}
+
+async function resolveTurn() {
+  const pCmd = game.combat.selectedCommand;
+  const pIntent = game.combat.selectedIntent;
+  const ai = aiChoose();
+  const eCmd = ai.command;
+  const eIntent = ai.intent;
+
+  document.querySelectorAll('.command-btn, .jbtn').forEach(b => b.style.pointerEvents = 'none');
+
+  // 매 합 시작 시 무기 부서짐 페널티 굴림 (부서졌을 때만 의미 있음)
+  game.combat.playerWeaponMultThisTurn = rollWeaponMult(game.weapon);
+  game.combat.enemyWeaponMultThisTurn = rollWeaponMult(game.combat.enemy);
+
+  const oldDist = game.combat.distance;
+  const oldPlayerPos = game.combat.playerPos;
+  const moved = resolvePositions(game.combat.playerPos, game.combat.enemyPos, pIntent, eIntent, game.combat.mapSize);
+  game.combat.playerPos = moved.playerPos;
+  game.combat.enemyPos = moved.enemyPos;
+  const newDist = moved.distance;
+  game.combat.lastDistance = oldDist;
+  game.combat.distance = newDist;
+  // 그대가 실제로 전진한 경우만 advance 보너스 — 적이 후퇴해서 거리만 늘어난 건 advance 아님
+  game.combat.advancedThisTurn = moved.playerPos > oldPlayerPos;
+  game.combat.retreatedThisTurn = moved.playerPos < oldPlayerPos;
+
+  const pCmdData = COMMANDS[pCmd];
+  const eCmdData = COMMANDS[eCmd];
+  // 기력 차감 = 기예 비용 + 의도 이동 비용
+  const pIntentCost = INTENT_COST[pIntent] || 0;
+  const eIntentCost = INTENT_COST[eIntent] || 0;
+  game.player.sta = clamp(game.player.sta - pCmdData.cost - pIntentCost, 0, game.player.maxSta);
+  game.combat.enemy.sta = clamp(game.combat.enemy.sta - eCmdData.cost - eIntentCost, 0, game.combat.enemy.maxSta);
+
+  if (pCmdData.limit) game.combat.playerLimits[pCmd]--;
+  if (eCmdData.limit) game.combat.enemyLimits[eCmd]--;
+
+  // Show intent arrows briefly (extended for 2-step intents)
+  const arrowMap = { advance2: '⇒', advance: '→', hold: '・', retreat: '←', retreat2: '⇐' };
+  const arrowMapE = { advance2: '⇐', advance: '←', hold: '・', retreat: '→', retreat2: '⇒' };
+  $('arrow-player').textContent = arrowMap[pIntent];
+  $('arrow-enemy').textContent = arrowMapE[eIntent];
+  $('arrow-player').style.left = 'calc(' + ($('fig-player').style.left) + ' + 36px)';
+  $('arrow-enemy').style.right = '8%';
+  $('arrow-enemy').style.left = '';
+  $('arrow-player').classList.add('show');
+  $('arrow-enemy').classList.add('show');
+
+  // Reveal animation
+  const cp = $('clash-player'), ce = $('clash-enemy'), cv = $('clash-vs');
+  $('clash-player-icon').innerHTML = `<use href="#${pCmdData.icon}"/>`;
+  $('clash-enemy-icon').innerHTML = `<use href="#${eCmdData.icon}"/>`;
+  $('clash-player-name').textContent = pCmdData.name;
+  $('clash-enemy-name').textContent = eCmdData.name;
+  $('clash-player-intent').textContent = INTENT_KO[pIntent];
+  $('clash-enemy-intent').textContent = INTENT_KO[eIntent];
+  cp.classList.remove('show', 'winner', 'loser', 'mutual');
+  ce.classList.remove('show', 'winner', 'loser', 'mutual');
+  cv.classList.remove('show');
+  void cp.offsetWidth;
+
+  await sleep(120);
+  renderDistance();
+  await sleep(400);
+  cp.classList.add('show');
+  await sleep(180);
+  cv.classList.add('show');
+  await sleep(180);
+  ce.classList.add('show');
+  await sleep(420);
+
+  $('arrow-player').classList.remove('show');
+  $('arrow-enemy').classList.remove('show');
+
+  const pUsableAtNewDist = rangeIncludes(pCmdData.ranges, newDist);
+  const eUsableAtNewDist = rangeIncludes(eCmdData.ranges, newDist);
+
+  const result = resolveCombat(pCmd, eCmd, pUsableAtNewDist, eUsableAtNewDist);
+
+  // 무기 내구도 — 같은 우선순위 공격끼리 충돌해 양쪽 데미지 발생한 경우 손실.
+  // (우선순위 차이로 한쪽만 발동된 경우는 제외 — 보통 한 칼만 마주침.)
+  if (pUsableAtNewDist && eUsableAtNewDist) {
+    const pSpd = pCmdData.speed ?? 2;
+    const eSpd = eCmdData.speed ?? 2;
+    const pIsAtk = pCmdData.type === 'attack' || pCmdData.type === 'thrust';
+    const eIsAtk = eCmdData.type === 'attack' || eCmdData.type === 'thrust';
+    if (pSpd === eSpd && pIsAtk && eIsAtk) {
+      applyClashDuraLoss();
+    }
+    // 추가: 적의 공격이 그대 막기에 닿으면 그대 무기(검)도 약간 닳음
+    if (pCmdData.type === 'block' && eIsAtk) {
+      const cfg = BALANCE.weapon || {};
+      const lo = cfg.blockDuraLossMin ?? 1, hi = cfg.blockDuraLossMax ?? 2;
+      if (game.weapon && !game.weapon.broken) {
+        game.weapon.durability = Math.max(0, game.weapon.durability - roll(lo, hi));
+        if (game.weapon.durability <= 0) game.weapon.broken = true;
+      }
+    }
+    if (eCmdData.type === 'block' && pIsAtk) {
+      const cfg = BALANCE.weapon || {};
+      const lo = cfg.blockDuraLossMin ?? 1, hi = cfg.blockDuraLossMax ?? 2;
+      if (!game.combat.enemy.weaponBroken) {
+        game.combat.enemy.weaponDura = Math.max(0, game.combat.enemy.weaponDura - roll(lo, hi));
+        if (game.combat.enemy.weaponDura <= 0) game.combat.enemy.weaponBroken = true;
+      }
+    }
+  }
+
+  if (game.classId === 'ronin' && pCmdData.type !== 'rest' && pCmdData.type !== 'feint' && !game.cmdHistory.includes(pCmd)) {
+    if (result.eHpDelta < 0) result.eHpDelta = Math.round(result.eHpDelta * 1.5);
+    if (result.eBalDelta < 0) result.eBalDelta = Math.round(result.eBalDelta * 1.5);
+    result.narrative = '【잔심】 ' + result.narrative;
+  }
+  if (game.classId === 'dobu' && game.combat.advancedThisTurn && (pCmdData.type === 'attack' || pCmdData.type === 'thrust')) {
+    if (result.eHpDelta < 0) result.eHpDelta = Math.round(result.eHpDelta * 1.6);
+    result.narrative = '【돌입】 ' + result.narrative;
+  }
+  if (game.classId === 'dobu' && game.combat.retreatedThisTurn) {
+    const dmg = roll(2, 4);
+    result.eHpDelta -= dmg;
+    result.narrative += ` 후퇴하며 표창 자동투척 (-${dmg})`;
+  }
+
+  // 검 놓침 회복 — 그대가 밀치기로 적의 균형을 깎거나 데미지가 들어가면 검 회복
+  if (game.combat.playerDisarmed && pCmd === (BALANCE.disarm.recoveryCommand || 'push')) {
+    if (result.eHpDelta < 0 || result.eBalDelta < 0) {
+      game.combat.playerDisarmed = false;
+      result.narrative += ' ✓ 검을 다시 잡았다!';
+    } else {
+      result.narrative += ' (검을 잡지 못함)';
+    }
+  }
+
+  game.player.hp = clamp(game.player.hp + result.pHpDelta, 0, game.player.maxHp);
+  game.player.bal = clamp(game.player.bal + result.pBalDelta, 0, game.player.maxBal);
+  game.combat.enemy.hp = clamp(game.combat.enemy.hp + result.eHpDelta, 0, game.combat.enemy.maxHp);
+  game.combat.enemy.bal = clamp(game.combat.enemy.bal + result.eBalDelta, 0, game.combat.enemy.maxBal);
+
+  // 휴식·회복 효과 (staGain/balGain 있으면 type 무관 적용)
+  if (pCmdData.staGain) game.player.sta = clamp(game.player.sta + pCmdData.staGain, 0, game.player.maxSta);
+  if (pCmdData.balGain) game.player.bal = clamp(game.player.bal + pCmdData.balGain, 0, game.player.maxBal);
+  if (eCmdData.staGain) game.combat.enemy.sta = clamp(game.combat.enemy.sta + eCmdData.staGain, 0, game.combat.enemy.maxSta);
+  if (eCmdData.balGain) game.combat.enemy.bal = clamp(game.combat.enemy.bal + eCmdData.balGain, 0, game.combat.enemy.maxBal);
+  if (pCmd === 'haggle') {
+    game.player.gold += pCmdData.goldGain;
+    result.narrative += ` (+${pCmdData.goldGain}금)`;
+  }
+
+  game.player.sta = clamp(game.player.sta + 2, 0, game.player.maxSta);
+  game.combat.enemy.sta = clamp(game.combat.enemy.sta + 2, 0, game.combat.enemy.maxSta);
+
+  if (result.pHpDelta < 0 || result.pBalDelta < -5) {
+    $('player-card').classList.add('flash-player');
+    setTimeout(() => $('player-card').classList.remove('flash-player'), 400);
+  }
+  if (result.eHpDelta < 0 || result.eBalDelta < -5) {
+    $('enemy-card').classList.add('flash-enemy');
+    setTimeout(() => $('enemy-card').classList.remove('flash-enemy'), 400);
+  }
+  if (result.crit) {
+    document.body.classList.add('shake');
+    setTimeout(() => document.body.classList.remove('shake'), 300);
+  }
+
+  let breakMsg = '';
+  if (game.combat.playerBroken) game.combat.playerBroken = false;
+  if (game.combat.enemy.broken) game.combat.enemy.broken = false;
+  if (game.player.bal === 0) {
+    game.combat.playerBroken = true;
+    game.player.bal = Math.round(game.player.maxBal * 0.3);
+    breakMsg += ' 그대의 자세가 무너졌다 — 다음 합 무방비!';
+  }
+  if (game.combat.enemy.bal === 0) {
+    game.combat.enemy.broken = true;
+    game.combat.enemy.bal = Math.round(game.combat.enemy.maxBal * 0.3);
+    breakMsg += ' 적의 자세가 무너졌다!';
+  }
+
+  game.cmdHistory.unshift(pCmd);
+  if (game.cmdHistory.length > 3) game.cmdHistory.pop();
+
+  appendLog(result.narrative + breakMsg, result.crit);
+  renderCombatStats();
+  renderMechanicDisplay();
+
+  // Highlight which side's command actually landed
+  const winner = inferWinner(result);
+  applyClashWinner(winner);
+  await sleep(600);
+
+  if (game.combat.enemy.hp <= 0) {
+    await sleep(700);
+    onCombatWin();
+    return;
+  }
+  if (game.player.hp <= 0) {
+    await sleep(700);
+    onPlayerDeath();
+    return;
+  }
+
+  game.combat.turn++;
+  $('turn-num').textContent = game.combat.turn;
+  // 다음 합 초기화: 기예 선택 해제, 의도는 '유지'로 리셋
+  game.combat.selectedCommand = null;
+  game.combat.selectedIntent = 'hold';
+  game.combat.processing = false;
+
+  // 검 놓침 굴림 — 보스전이면 발생 안 함. 이미 놓친 상태면 재굴림 안 함.
+  const disarmCfg = BALANCE.disarm || {};
+  const isBoss = !!(ENEMIES[game.combat.enemyId] && ENEMIES[game.combat.enemyId].isBoss);
+  if (!game.combat.playerDisarmed && !(disarmCfg.noDisarmVsBoss && isBoss)) {
+    if (Math.random() < (disarmCfg.chancePerTurn ?? 0.005)) {
+      game.combat.playerDisarmed = true;
+      // 시각·문구
+      $('clash-narrative').textContent = '⚠ 칼을 놓쳤다! 밀치기로 다시 잡아라.';
+      $('clash-narrative').style.color = '#b8232f';
+      setTimeout(() => { $('clash-narrative').style.color = ''; }, 2500);
+    }
+  }
+
+  // 조이스틱 UI 동기화
+  document.querySelectorAll('#intent-row .jbtn').forEach(b => b.classList.toggle('selected', b.dataset.intent === 'hold'));
+  $('joystick-hint').textContent = '유지 · 0';
+  // 기예 카드 다시 그림 — selected 클래스도 함께 사라짐
+  renderCommands();
+  document.querySelectorAll('.command-btn, .jbtn').forEach(b => b.style.pointerEvents = '');
+}
+
+// 무기 부서졌으면 매 합 굴린 페널티 배율을 반환. 안 부서졌으면 1.0.
+function rollWeaponMult(weaponLike) {
+  if (!weaponLike) return 1.0;
+  const broken = weaponLike.broken || weaponLike.weaponBroken;
+  if (!broken) return 1.0;
+  const cfg = BALANCE.weapon || {};
+  const min = cfg.brokenDamageMin ?? 0.1;
+  const max = cfg.brokenDamageMax ?? 0.5;
+  return min + Math.random() * (max - min);
+}
+function playerWeaponMult() {
+  return game.combat ? (game.combat.playerWeaponMultThisTurn ?? 1.0) : 1.0;
+}
+function enemyWeaponMult() {
+  return game.combat ? (game.combat.enemyWeaponMultThisTurn ?? 1.0) : 1.0;
+}
+
+// 한 쪽만 발동되는 공격 (다른 쪽이 우선순위에 밀려 무효일 때).
+// who: true=그대 발동, false=적 발동.
+function applyOneSidedAttack(c, isPlayer, lvl) {
+  const r = { pHpDelta: 0, eHpDelta: 0, pBalDelta: 0, eBalDelta: 0, narrative: '' };
+  if (c.type !== 'attack' && c.type !== 'thrust' && c.type !== 'push') {
+    r.narrative = `상대의 행동이 무력화됨.`;
+    return r;
+  }
+  if (isPlayer) {
+    if (Math.random() < game.combat.enemy.evade) {
+      r.narrative = `적이 가까스로 피한다.`;
+      return r;
+    }
+    const base = c.hp ? roll(c.hp[0] + lvl, c.hp[1] + lvl) : 0;
+    const eBrokenMult = game.combat.enemy.broken ? 1.5 : 1.0;
+    r.eHpDelta = -Math.round(base * eBrokenMult * playerWeaponMult());
+    if (c.bal) r.eBalDelta = -roll(c.bal[0], c.bal[1]);
+    r.narrative = `${c.name}이 적을 친다 (-${-r.eHpDelta}${r.eBalDelta ? `/균형 -${-r.eBalDelta}` : ''}).`;
+  } else {
+    if (Math.random() < game.player.evade) {
+      r.narrative = `그대가 가까스로 피한다.`;
+      return r;
+    }
+    const base = c.hp ? roll(c.hp[0], c.hp[1]) : 0;
+    const pBrokenMult = game.combat.playerBroken ? 1.5 : 1.0;
+    r.pHpDelta = -Math.round(base * pBrokenMult * enemyWeaponMult());
+    if (c.bal) r.pBalDelta = -roll(c.bal[0], c.bal[1]);
+    r.narrative = `${c.name}이 그대를 친다 (-${-r.pHpDelta}${r.pBalDelta ? `/균형 -${-r.pBalDelta}` : ''}).`;
+  }
+  return r;
+}
+
+// 같은 우선순위로 충돌 시 무기 내구도 손실 적용 (양쪽).
+function applyClashDuraLoss() {
+  const cfg = BALANCE.weapon || {};
+  const lossMin = cfg.clashDuraLossMin ?? 1;
+  const lossMax = cfg.clashDuraLossMax ?? 3;
+  // 그대 무기
+  if (game.weapon && !game.weapon.broken) {
+    game.weapon.durability = Math.max(0, game.weapon.durability - roll(lossMin, lossMax));
+    if (game.weapon.durability <= 0) game.weapon.broken = true;
+  }
+  // 적 무기
+  if (!game.combat.enemy.weaponBroken) {
+    game.combat.enemy.weaponDura = Math.max(0, game.combat.enemy.weaponDura - roll(lossMin, lossMax));
+    if (game.combat.enemy.weaponDura <= 0) game.combat.enemy.weaponBroken = true;
+  }
+}
+function resolveCombat(pCmd, eCmd, pValid, eValid) {
+
+  const result = { pHpDelta: 0, eHpDelta: 0, pBalDelta: 0, eBalDelta: 0, narrative: '', crit: false };
+  const pC = COMMANDS[pCmd], eC = COMMANDS[eCmd];
+  const pBrokenMult = game.combat.playerBroken ? 1.5 : 1.0;
+  const eBrokenMult = game.combat.enemy.broken ? 1.5 : 1.0;
+  // 그대 데미지 가산 = 기예 숙련도(수련장) + 무기 보너스(대장간). 공격성 기예에만 적용.
+  const pCmdLvl = game.cmdLevels[pCmd] || 0;
+  const isAttackish = pC.type === 'attack' || pC.type === 'thrust';
+  const pWeaponBonus = isAttackish ? (game.weapon ? game.weapon.damageBonus : 0) : 0;
+  const pLvl = pCmdLvl + pWeaponBonus;
+
+  if (!pValid && !eValid) {
+    result.narrative = `둘 다 거리를 잘못 읽었다. 칼이 허공을 가른다.`;
+    return result;
+  }
+  if (!pValid) {
+    result.narrative = `그대의 ${pC.name}이 거리를 놓쳤다.`;
+    if (eC.type === 'attack' || eC.type === 'thrust') {
+      const evaded = Math.random() < game.player.evade;
+      if (evaded) result.narrative += ` 그러나 본능적으로 회피.`;
+      else {
+        const hpDmg = eC.hp ? roll(eC.hp[0], eC.hp[1]) : 0;
+        result.pHpDelta = -Math.round(hpDmg * pBrokenMult * enemyWeaponMult());
+        result.narrative += ` 적의 ${eC.name}이 그대를 친다 (-${-result.pHpDelta}).`;
+      }
+    }
+    return result;
+  }
+  if (!eValid) {
+    result.narrative = `적의 ${eC.name}이 거리를 놓쳤다.`;
+    if (pC.type === 'attack' || pC.type === 'thrust') {
+      const evaded = Math.random() < game.combat.enemy.evade;
+      if (evaded) result.narrative += ` 그러나 적이 본능적으로 회피.`;
+      else {
+        const hpDmg = pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0;
+        result.eHpDelta = -Math.round(hpDmg * eBrokenMult * playerWeaponMult());
+        result.narrative += ` 그대의 ${pC.name}이 닿는다 (-${-result.eHpDelta}).`;
+      }
+    }
+    return result;
+  }
+
+  // ============================================================
+  // 우선순위(speed) 처리 — 다른 등급일 때 빠른 쪽이 적중하고 느린 쪽 무효
+  // 같은 등급일 때 기존 충돌 표 진행
+  // ============================================================
+  const pSpeed = pC.speed ?? 2;
+  const eSpeed = eC.speed ?? 2;
+  const speedDiffEnabled = (BALANCE.combat && BALANCE.combat.speedDifferenceBlocks !== false);
+
+  // 회피·막기·받아치기 등 방어계는 속도 차이 무시 — 자기를 보호하려 한 것이므로 무시되면 안 됨
+  const isDefensive = (c) => c.type === 'block' || c.type === 'dodge' || c.type === 'parry';
+
+  if (speedDiffEnabled && pSpeed !== eSpeed && !isDefensive(pC) && !isDefensive(eC)) {
+    if (pSpeed < eSpeed) {
+      // 그대가 빠름 → 적의 행동 무효
+      const verdict = applyOneSidedAttack(pC, true, pLvl);
+      Object.assign(result, verdict);
+      result.narrative = `${pC.name}이 ${eC.name}보다 빠르다 — ` + verdict.narrative;
+      return result;
+    } else {
+      // 적이 빠름 → 그대 행동 무효
+      const verdict = applyOneSidedAttack(eC, false, 0);
+      Object.assign(result, verdict);
+      result.narrative = `${eC.name}이 ${pC.name}보다 빠르다 — ` + verdict.narrative;
+      return result;
+    }
+  }
+
+  const pType = pC.type, eType = eC.type;
+  const pIs = t => pType === t, eIs = t => eType === t;
+  const pair = (a, b) => (pType === a && eType === b) || (pType === b && eType === a);
+  const sameType = pType === eType;
+
+  function dealHpToEnemy(base) {
+    if (Math.random() < game.combat.enemy.evade) return -1;
+    const dmg = Math.round(base * eBrokenMult * playerWeaponMult());
+    result.eHpDelta -= dmg;
+    return dmg;
+  }
+  function dealHpToPlayer(base) {
+    if (Math.random() < game.player.evade) return -1;
+    const dmg = Math.round(base * pBrokenMult * enemyWeaponMult());
+    result.pHpDelta -= dmg;
+    return dmg;
+  }
+  const dmgStr = d => d === -1 ? '회피!' : d;
+
+  if (pIs('rest') && eIs('rest')) {
+    result.narrative = '둘 다 호흡을 가다듬는다. 침묵의 합.';
+    return result;
+  }
+  if (pIs('rest') || eIs('rest')) {
+    const restingIsP = pIs('rest');
+    const otherC = restingIsP ? eC : pC;
+    const otherType = restingIsP ? eType : pType;
+    if (otherType === 'attack' || otherType === 'thrust') {
+      const base = otherC.hp ? roll(otherC.hp[0], otherC.hp[1]) : 0;
+      if (restingIsP) {
+        const dmg = dealHpToPlayer(base * 1.3);
+        result.narrative = `그대 호흡을 가다듬는 사이, 적의 ${otherC.name}이 깊게 닿는다 (-${dmgStr(dmg)}).`;
+      } else {
+        const baseP = pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0;
+        const dmg = dealHpToEnemy(baseP * 1.3);
+        result.narrative = `적이 호흡을 고르는 사이, 그대의 ${pC.name}이 닿는다 (-${dmgStr(dmg)}).`;
+      }
+    } else {
+      result.narrative = '한쪽이 가다듬고, 한쪽도 결정을 미룬다.';
+    }
+    return result;
+  }
+
+  if (pIs('feint') && eIs('feint')) {
+    result.narrative = '서로 거짓을 던진다. 칼은 움직이지 않는다.';
+    return result;
+  }
+  if (pIs('feint') || eIs('feint')) {
+    result.narrative = '한쪽의 칼끝이 거짓이다.';
+    if (pIs('feint') && (eType === 'attack' || eType === 'thrust')) {
+      const base = eC.hp ? roll(eC.hp[0], eC.hp[1]) : 0;
+      const dmg = dealHpToPlayer(base * 0.7);
+      result.narrative += ` 그러나 적의 ${eC.name}이 비스듬히 닿는다 (-${dmgStr(dmg)}).`;
+    }
+    if (eIs('feint') && (pType === 'attack' || pType === 'thrust')) {
+      const base = pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0;
+      const dmg = dealHpToEnemy(base * 0.7);
+      result.narrative += ` 그대의 ${pC.name}이 비스듬히 닿는다 (-${dmgStr(dmg)}).`;
+    }
+    return result;
+  }
+
+  if (sameType && (pType === 'attack' || pType === 'thrust')) {
+    const pBase = pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0;
+    const eBase = eC.hp ? roll(eC.hp[0], eC.hp[1]) : 0;
+    const pDealt = dealHpToEnemy(pBase * 0.6);
+    const eDealt = dealHpToPlayer(eBase * 0.6);
+    if (pC.bal) result.eBalDelta -= roll(pC.bal[0], pC.bal[1]);
+    if (eC.bal) result.pBalDelta -= roll(eC.bal[0], eC.bal[1]);
+    result.narrative = `칼날이 부딪힌다. 양쪽 다 베인다 (그대 -${dmgStr(eDealt)} / 적 -${dmgStr(pDealt)}).`;
+    if (pType === 'thrust') result.crit = true;
+    return result;
+  }
+  if (sameType && pType === 'block') {
+    result.narrative = '둘 다 칼끝만 굳힌다. 정적.';
+    return result;
+  }
+  if (sameType && pType === 'dodge') {
+    result.narrative = '둘 다 한 발 물러선다. 거리가 다시 벌어진다.';
+    return result;
+  }
+  if (sameType && pType === 'parry') {
+    result.narrative = '서로 받아치려다 빈틈만 보인다.';
+    return result;
+  }
+  if (sameType && pType === 'push') {
+    result.eBalDelta -= roll(4, 6);
+    result.pBalDelta -= roll(4, 6);
+    result.narrative = '서로 밀친다. 둘 다 휘청.';
+    return result;
+  }
+
+  if (pair('attack', 'block')) {
+    if (pIs('block')) {
+      result.eBalDelta -= 4;
+      result.narrative = `적의 ${eC.name}을 받아낸다. 적 자세 흔들림 (균형 -4).`;
+    } else {
+      const base = pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0;
+      const through = Math.round(base * 0.25);
+      result.eHpDelta -= through;
+      result.eBalDelta -= 5;
+      result.narrative = `적이 받아내지만 ${pC.name}이 일부 뚫는다 (-${through}, 균형 -5).`;
+    }
+    return result;
+  }
+  if (pair('attack', 'dodge')) {
+    if (pIs('dodge')) {
+      result.narrative = `적의 ${eC.name}을 흘려낸다.`;
+    } else {
+      if (pC.pierce) {
+        const dmg = dealHpToEnemy(pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0);
+        result.narrative = `회피해도 ${pC.name}은 따라온다 (-${dmgStr(dmg)}).`;
+      } else {
+        result.narrative = `그대의 ${pC.name}이 허공을 가른다.`;
+      }
+    }
+    return result;
+  }
+  if (pair('attack', 'parry')) {
+    if (pIs('parry')) {
+      const dmg = dealHpToEnemy(roll(pC.counter[0], pC.counter[1]));
+      result.eBalDelta -= 4;
+      result.narrative = `적의 ${eC.name}을 받아치며 베어낸다 (-${dmgStr(dmg)}).`;
+    } else {
+      if (pC.pierce) {
+        const dmg = dealHpToEnemy(pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0);
+        result.narrative = `받아치려는 칼을 흘려 베어낸다 (-${dmgStr(dmg)}).`;
+      } else {
+        const dmg = dealHpToPlayer(roll(eC.counter[0], eC.counter[1]));
+        result.pBalDelta -= 4;
+        result.narrative = `적이 받아치며 그대를 벤다 (-${dmgStr(dmg)}).`;
+      }
+    }
+    return result;
+  }
+  if (pair('attack', 'push')) {
+    if (pIs('push')) {
+      const balDmg = roll(pC.bal[0], pC.bal[1]);
+      result.eBalDelta -= balDmg;
+      if (pC.hp) result.eHpDelta -= roll(pC.hp[0], pC.hp[1]);
+      result.narrative = `먼저 몸으로 밀친다. 적 휘청 (균형 -${balDmg}).`;
+    } else {
+      const balDmg = roll(eC.bal[0], eC.bal[1]);
+      result.pBalDelta -= balDmg;
+      if (eC.hp) result.pHpDelta -= roll(eC.hp[0], eC.hp[1]);
+      result.narrative = `적이 먼저 몸을 던진다 (균형 -${balDmg}).`;
+    }
+    return result;
+  }
+  if (pair('thrust', 'block')) {
+    if (pIs('thrust')) {
+      const base = pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0;
+      const dmg = Math.round(base * 0.55);
+      result.eHpDelta -= dmg;
+      result.eBalDelta -= 6;
+      result.narrative = `방어를 뚫는 ${pC.name} (-${dmg}, 균형 -6).`;
+    } else {
+      const base = eC.hp ? roll(eC.hp[0], eC.hp[1]) : 0;
+      const dmg = Math.round(base * 0.55);
+      result.pHpDelta -= dmg;
+      result.pBalDelta -= 6;
+      result.narrative = `적의 ${eC.name}이 방어를 뚫는다 (-${dmg}, 균형 -6).`;
+    }
+    return result;
+  }
+  if (pair('thrust', 'dodge')) {
+    if (pIs('dodge')) {
+      result.eBalDelta -= 5;
+      result.narrative = `${eC.name}을 흘린다. 적 너무 깊이 들어왔다 (균형 -5).`;
+    } else {
+      result.pBalDelta -= 5;
+      result.narrative = `깊이 찌른 칼 — 적이 거기 없다 (균형 -5).`;
+    }
+    return result;
+  }
+  if (pair('thrust', 'parry')) {
+    if (pIs('parry')) {
+      const dmg = dealHpToEnemy(roll(pC.counter[0], pC.counter[1]));
+      result.narrative = `찌르기를 비틀어 베어친다 (-${dmgStr(dmg)}).`;
+    } else {
+      const dmg = dealHpToPlayer(roll(eC.counter[0], eC.counter[1]));
+      result.narrative = `적이 찌르기를 비틀어 벤다 (-${dmgStr(dmg)}).`;
+    }
+    return result;
+  }
+  if (pair('thrust', 'push')) {
+    if (pIs('thrust')) {
+      const dmg = dealHpToEnemy(pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0);
+      result.narrative = `밀치려는 찰나, 칼끝이 먼저 닿는다 (-${dmgStr(dmg)}).`;
+      result.crit = true;
+    } else {
+      const dmg = dealHpToPlayer(eC.hp ? roll(eC.hp[0], eC.hp[1]) : 0);
+      result.narrative = `달려드는 그대를 적의 칼끝이 맞이한다 (-${dmgStr(dmg)}).`;
+      result.crit = true;
+    }
+    return result;
+  }
+  if (pair('block', 'dodge')) {
+    result.narrative = '한쪽은 굳히고, 한쪽은 빠진다. 정적.';
+    return result;
+  }
+  if (pair('block', 'parry')) {
+    result.narrative = '둘 다 받기를 노린다. 빈틈을 탐색.';
+    return result;
+  }
+  if (pair('block', 'push')) {
+    if (pIs('push')) {
+      const balDmg = roll(pC.bal[0], pC.bal[1]);
+      result.eBalDelta -= balDmg;
+      result.narrative = `방어 너머로 적을 밀쳐낸다 (균형 -${balDmg}).`;
+    } else {
+      const balDmg = roll(eC.bal[0], eC.bal[1]);
+      result.pBalDelta -= balDmg;
+      result.narrative = `적이 방패째로 그대를 밀친다 (균형 -${balDmg}).`;
+    }
+    return result;
+  }
+  if (pair('dodge', 'parry')) {
+    result.narrative = '한쪽은 빠지고, 한쪽은 받으려 한다. 빈손.';
+    return result;
+  }
+  if (pair('dodge', 'push')) {
+    result.narrative = '밀치기가 허공을 가른다.';
+    return result;
+  }
+  if (pair('parry', 'push')) {
+    if (pIs('push')) {
+      const balDmg = roll(pC.bal[0], pC.bal[1]);
+      result.eBalDelta -= balDmg;
+      result.narrative = `받아치려는 적을 그대로 밀어낸다 (균형 -${balDmg}).`;
+    } else {
+      const balDmg = roll(eC.bal[0], eC.bal[1]);
+      result.pBalDelta -= balDmg;
+      result.narrative = `받아치려는 그대를 적이 밀어낸다 (균형 -${balDmg}).`;
+    }
+    return result;
+  }
+  if (pair('attack', 'thrust')) {
+    if (pIs('thrust')) {
+      const dmg = dealHpToEnemy(pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0);
+      result.narrative = `찌르기가 베기보다 먼저 닿는다 (-${dmgStr(dmg)}).`;
+    } else {
+      const dmg = dealHpToPlayer(eC.hp ? roll(eC.hp[0], eC.hp[1]) : 0);
+      result.narrative = `적의 칼끝이 먼저 닿는다 (-${dmgStr(dmg)}).`;
+    }
+    return result;
+  }
+
+  result.narrative = '두 검객이 서로를 노려본다.';
+  return result;
+}
+
+// 결과로부터 어느 쪽 기예가 먹혔는지 추론
+function inferWinner(result) {
+  const pImpact = (-result.pHpDelta) + Math.max(0, -result.pBalDelta * 0.3);
+  const eImpact = (-result.eHpDelta) + Math.max(0, -result.eBalDelta * 0.3);
+  if (pImpact > 0.5 && eImpact > 0.5) return 'both';
+  if (eImpact > pImpact + 0.5) return 'player';
+  if (pImpact > eImpact + 0.5) return 'enemy';
+  return 'neither';
+}
+
+function applyClashWinner(winner) {
+  const cp = $('clash-player'), ce = $('clash-enemy');
+  cp.classList.remove('winner', 'loser', 'mutual');
+  ce.classList.remove('winner', 'loser', 'mutual');
+  if (winner === 'player') {
+    cp.classList.add('winner');
+    ce.classList.add('loser');
+  } else if (winner === 'enemy') {
+    ce.classList.add('winner');
+    cp.classList.add('loser');
+  } else if (winner === 'both') {
+    cp.classList.add('mutual');
+    ce.classList.add('mutual');
+  }
+}
+
+function appendLog(text, crit) {
+  const log = $('log');
+  log.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'log-entry' + (crit ? ' crit' : '');
+  div.textContent = `${game.combat.turn}합 · ${text}`;
+  log.appendChild(div);
+}
+
+// ============================================================
+// COMBAT END
+// ============================================================
+function onCombatWin() {
+  const e = ENEMIES[game.combat.enemyId];
+  const isBoss = e.isBoss;
+  let goldGain = e.goldReward;
+  if (game.classId === 'merchant') goldGain = Math.round(goldGain * 1.3);
+  const hpGain = isBoss ? 0 : 10;
+
+  game.player.gold += goldGain;
+  game.player.hp = clamp(game.player.hp + hpGain, 0, game.player.maxHp);
+
+  $('reward-title').textContent = isBoss ? '검호를 베었다' : '승리';
+  $('reward-flavor').textContent = isBoss ? '벚꽃이 떨어진다. 그대만 남는다.' : `${e.name}을 쓰러뜨렸다.`;
+  let listHtml = '';
+  listHtml += `<div class="reward-list-item"><span class="label">노획 금화</span><span class="val">+${goldGain}</span></div>`;
+  if (hpGain > 0) listHtml += `<div class="reward-list-item"><span class="label">상처 회복</span><span class="val">+${hpGain} HP</span></div>`;
+  if (game.classId === 'merchant') listHtml += `<div class="reward-list-item"><span class="label">은전 자루</span><span class="val">+30%</span></div>`;
+  $('reward-list').innerHTML = listHtml;
+
+  $('reward-continue-btn').onclick = () => {
+    $('modal-reward').classList.add('hidden');
+    if (isBoss) onGameEnd(true);
+    else {
+      game.stageCompleted[game.combat.stageIdx] = true;
+      game.currentStage = game.combat.stageIdx + 1;
+      enterMap();
+    }
+  };
+  $('modal-reward').classList.remove('hidden');
+}
+
+function onPlayerDeath() { onGameEnd(false); }
+
+function onGameEnd(victory) {
+  const wrap = $('end-icon-wrap');
+  const svg = $('end-icon-svg');
+  wrap.classList.toggle('win', victory);
+  wrap.classList.toggle('lose', !victory);
+  svg.innerHTML = victory ? '<use href="#i-trophy"/>' : '<use href="#i-skull"/>';
+  $('end-title').textContent = victory ? '승리' : '패배';
+  $('end-text').textContent = victory ? '— 검호를 베고 길을 떠난다 —' : '— 길 위에서 쓰러졌다 —';
+  $('modal-end').classList.remove('hidden');
+}
+
+// ============================================================
+// SHOP
+// ============================================================
+function enterShop() {
+  const available = SHOP_POOL.filter(c => !game.deck.includes(c));
+  const offers = [];
+  const pool = [...available];
+  for (let i = 0; i < 3 && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    offers.push(pool.splice(idx, 1)[0]);
+  }
+  game.shop = {
+    offers: offers.map(cid => ({ cid, sold: false, price: getCommandPrice(cid) })),
+    potions: [
+      { id: 'hppot',  name: '회복약', icon: 'i-potion', desc: 'HP +10 즉시 회복',     price: applyMerchantDiscount(40), sold: false },
+      { id: 'stapot', name: '환단약', icon: 'i-potion', desc: 'HP +5, 균형 회복',     price: applyMerchantDiscount(30), sold: false },
+    ],
+  };
+  renderShop();
+  showScreen('shop');
+}
+
+function getCommandPrice(cid) {
+  const c = COMMANDS[cid];
+  let base = 50;
+  if (c.cost >= 4) base = 75;
+  if (c.cost >= 5) base = 100;
+  if (c.limit) base = 60;
+  if (c.cost <= 0) base = 40;
+  return applyMerchantDiscount(base);
+}
+
+function applyMerchantDiscount(p) {
+  if (game.classId === 'merchant') return Math.round(p * 0.75);
+  return p;
+}
+
+function renderShop() {
+  $('shop-gold').textContent = game.player.gold;
+  $('shop-hp').textContent = `${game.player.hp}/${game.player.maxHp}`;
+
+  const cmdContainer = $('shop-commands');
+  cmdContainer.innerHTML = '';
+  if (game.shop.offers.length === 0) {
+    cmdContainer.innerHTML = '<div class="empty-state">상점이 비었다.</div>';
+  }
+  game.shop.offers.forEach((offer, idx) => {
+    const c = COMMANDS[offer.cid];
+    const div = document.createElement('div');
+    div.className = 'shop-item';
+    if (offer.sold) div.classList.add('sold');
+    if (!offer.sold && offer.price > game.player.gold) div.classList.add('unaffordable');
+    let detail = `${rangeLabel(c.ranges)} · 기력 ${c.cost}`;
+    if (c.hp) detail += ` · HP ${c.hp[0]}~${c.hp[1]}`;
+    if (c.bal) detail += ` · 균형 ${c.bal[0]}~${c.bal[1]}`;
+    if (c.counter) detail += ` · 반격 ${c.counter[0]}~${c.counter[1]}`;
+    if (c.staGain) detail += ` · 기력 +${c.staGain}`;
+    if (c.balGain) detail += ` · 균형 +${c.balGain}`;
+    if (c.limit) detail += ` · 전투당 ${c.limit}회`;
+    div.innerHTML = `
+      <div class="shop-item-icon"><svg><use href="#${c.icon}"/></svg></div>
+      <div class="shop-item-info">
+        <div class="shop-item-name">${c.name}${offer.sold ? ' (구매됨)' : ''}</div>
+        <div class="shop-item-detail">${detail}</div>
+      </div>
+      <div class="shop-item-price">${game.classId === 'merchant' ? `<span class="strike">${Math.round(offer.price/0.75)}</span>` : ''}${offer.price}</div>
+    `;
+    if (!offer.sold && offer.price <= game.player.gold) div.onclick = () => buyCommand(idx);
+    cmdContainer.appendChild(div);
+  });
+
+  const potContainer = $('shop-potions');
+  potContainer.innerHTML = '';
+  game.shop.potions.forEach((p, idx) => {
+    const div = document.createElement('div');
+    div.className = 'shop-item';
+    if (p.sold) div.classList.add('sold');
+    if (!p.sold && p.price > game.player.gold) div.classList.add('unaffordable');
+    div.innerHTML = `
+      <div class="shop-item-icon"><svg><use href="#${p.icon}"/></svg></div>
+      <div class="shop-item-info">
+        <div class="shop-item-name">${p.name}${p.sold ? ' (구매됨)' : ''}</div>
+        <div class="shop-item-detail">${p.desc}</div>
+      </div>
+      <div class="shop-item-price">${p.price}</div>
+    `;
+    if (!p.sold && p.price <= game.player.gold) div.onclick = () => buyPotion(idx);
+    potContainer.appendChild(div);
+  });
+}
+
+function buyCommand(idx) {
+  const offer = game.shop.offers[idx];
+  if (offer.sold || offer.price > game.player.gold) return;
+  game.player.gold -= offer.price;
+  game.deck.push(offer.cid);
+  game.cmdLevels[offer.cid] = 0;
+  offer.sold = true;
+  renderShop();
+}
+
+function buyPotion(idx) {
+  const p = game.shop.potions[idx];
+  if (p.sold || p.price > game.player.gold) return;
+  game.player.gold -= p.price;
+  if (p.id === 'hppot') game.player.hp = clamp(game.player.hp + 10, 0, game.player.maxHp);
+  if (p.id === 'stapot') game.player.hp = clamp(game.player.hp + 5, 0, game.player.maxHp);
+  p.sold = true;
+  renderShop();
+}
+
+$('shop-leave-btn').onclick = () => { enterMap(); };
+
+// ============================================================
+// FORGE
+// ============================================================
+function enterForge() {
+  $('forge-flavor').textContent = `"검은 쓸수록 무뎌지지. 그러나 잘 갈면 — 다시 산다."`;
+  renderForge();
+  showScreen('forge');
+}
+
+function renderForge() {
+  $('forge-gold').textContent = game.player.gold;
+  $('forge-hp').textContent = `${game.player.hp}/${game.player.maxHp}`;
+
+  const deckEl = $('forge-deck');
+  // 무기 한 자루를 카드 형태로 표시 (선택 필요 없음)
+  const w = game.weapon;
+  const duraPct = w.broken ? 0 : Math.round(w.durability / w.maxDurability * 100);
+  const duraColor = w.broken ? 'var(--enemy)' : (duraPct < 30 ? 'var(--enemy)' : duraPct < 60 ? 'var(--gold-deep)' : 'var(--gold-deep)');
+  deckEl.innerHTML = `
+    <div class="weapon-card">
+      <div class="weapon-card-row">
+        <div class="weapon-card-emblem"><svg><use href="#i-attack"/></svg></div>
+        <div class="weapon-card-info">
+          <div class="weapon-card-name">${w.name} <span class="weapon-card-tier">+${w.damageBonus}</span></div>
+          <div class="weapon-card-detail">모든 공격·찌르기 데미지 +${w.damageBonus}</div>
+          <div class="weapon-card-detail" style="margin-top:5px;display:flex;align-items:center;gap:6px">
+            <span style="font-family:'EB Garamond',serif;font-style:italic;color:var(--text-3)">내구도</span>
+            <span style="display:inline-block;width:80px;height:6px;background:var(--surface-deep);border:1px solid var(--text-3);border-radius:3px;overflow:hidden">
+              <span style="display:block;height:100%;width:${duraPct}%;background:${duraColor};transition:width 0.3s"></span>
+            </span>
+            <span style="color:${duraColor};font-weight:700">${w.broken ? '부서짐!' : duraPct + '%'}</span>
+            <span style="color:var(--text-3)">(${w.broken ? 0 : w.durability}/${w.maxDurability})</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  deckEl.style.gridTemplateColumns = '1fr';
+
+  const optTitle = $('forge-options-title');
+  const optEl = $('forge-options');
+  optEl.innerHTML = '';
+  optTitle.classList.remove('disabled');
+  optTitle.innerHTML = `강화 <span style="color:var(--text-3);font-weight:400;font-size:11px">— 현재 +${w.damageBonus}</span>`;
+
+  const options = [
+    { id: 'safe',     name: '안전 강화', detail: `+1 데미지 (모든 공격성 기예)`,         cost: applyMerchantDiscount(40), failChance: 0,    bonus: 1 },
+    { id: 'risky',    name: '도박 강화', detail: `+2 데미지 · 10% 실패 시 변화 없음`,    cost: applyMerchantDiscount(60), failChance: 0.10, bonus: 2 },
+    { id: 'reckless', name: '광기 강화', detail: `+4 데미지 · 35% 실패 시 -2 페널티`,    cost: applyMerchantDiscount(90), failChance: 0.35, bonus: 4 },
+  ];
+  const visible = game.classId === 'merchant' ? options.filter(o => o.id !== 'reckless') : options;
+
+  visible.forEach(opt => {
+    const div = document.createElement('div');
+    div.className = 'forge-option';
+    if (opt.cost > game.player.gold) div.classList.add('disabled');
+    div.innerHTML = `
+      <div>
+        <div class="forge-option-name">${opt.name}</div>
+        <div class="forge-option-detail">${opt.detail}</div>
+      </div>
+      <div class="forge-option-cost">${opt.cost}</div>
+    `;
+    if (opt.cost <= game.player.gold) div.onclick = () => doForge(opt);
+    optEl.appendChild(div);
+  });
+
+  // 수리 섹션 — 옵션 영역 끝에 별도 그룹 (구분선)
+  const repairLabel = document.createElement('div');
+  repairLabel.style.cssText = 'margin-top:14px;padding-top:10px;border-top:1px dashed var(--line-soft);font-family:\'Noto Serif KR\',serif;font-weight:700;font-size:12px;color:var(--text-2)';
+  repairLabel.textContent = '수리';
+  optEl.appendChild(repairLabel);
+
+  const repairOpts = (BALANCE.weapon && BALANCE.weapon.repairOptions) || [
+    { id: 'patch', label: '응급 수리', cost: 30, amount: 30 },
+    { id: 'full',  label: '완전 수리', cost: 60, amount: 100 },
+  ];
+  const needsRepair = w.durability < w.maxDurability || w.broken;
+  if (!needsRepair) {
+    const noNeed = document.createElement('div');
+    noNeed.style.cssText = 'padding:10px;color:var(--text-3);font-style:italic;text-align:center;font-size:11.5px';
+    noNeed.textContent = '검이 멀쩡하다. 수리 필요 없음.';
+    optEl.appendChild(noNeed);
+  } else {
+    repairOpts.forEach(opt => {
+      const cost = applyMerchantDiscount(opt.cost);
+      const div = document.createElement('div');
+      div.className = 'forge-option';
+      if (cost > game.player.gold) div.classList.add('disabled');
+      const projected = Math.min(w.maxDurability, (w.broken ? 0 : w.durability) + opt.amount);
+      div.innerHTML = `
+        <div>
+          <div class="forge-option-name">${opt.label}</div>
+          <div class="forge-option-detail">내구도 +${opt.amount} → ${projected}/${w.maxDurability}</div>
+        </div>
+        <div class="forge-option-cost">${cost}</div>
+      `;
+      if (cost <= game.player.gold) div.onclick = () => doRepair(opt, cost);
+      optEl.appendChild(div);
+    });
+  }
+}
+
+function doRepair(opt, cost) {
+  game.player.gold -= cost;
+  const w = game.weapon;
+  const before = w.broken ? 0 : w.durability;
+  w.durability = Math.min(w.maxDurability, before + opt.amount);
+  if (w.durability > 0) w.broken = false;
+  $('forge-flavor').textContent = `${w.name} 수리됨. ${before} → ${w.durability}/${w.maxDurability}.`;
+  renderForge();
+}
+
+function doForge(opt) {
+  game.player.gold -= opt.cost;
+  const failed = Math.random() < opt.failChance;
+  let msg = '';
+  if (failed) {
+    if (opt.id === 'reckless') {
+      game.weapon.damageBonus = Math.max(-2, game.weapon.damageBonus - 2);
+      msg = `실패! 검이 상했다. (-2 데미지)`;
+    } else {
+      msg = `실패. 강화되지 않았다.`;
+    }
+  } else {
+    game.weapon.damageBonus += opt.bonus;
+    msg = `성공! ${game.weapon.name} +${opt.bonus} 데미지.`;
+  }
+  $('forge-flavor').textContent = msg;
+  renderForge();
+}
+
+$('forge-leave-btn').onclick = () => { enterMap(); };
+
+// ============================================================
+// DOJO — 수련장 (기예 숙련도 강화)
+// ============================================================
+function enterDojo() {
+  game.dojo = { selectedCommand: null };
+  $('dojo-flavor').textContent = `"한 동작을 천 번 해라. 천 동작을 한 번 하지 말고."`;
+  renderDojo();
+  showScreen('dojo');
+}
+
+function renderDojo() {
+  $('dojo-gold').textContent = game.player.gold;
+  $('dojo-hp').textContent = `${game.player.hp}/${game.player.maxHp}`;
+
+  const deckEl = $('dojo-deck');
+  deckEl.style.gridTemplateColumns = '';  // 기본 5열로 복귀 (CSS rule)
+  deckEl.innerHTML = '';
+  game.deck.forEach(cid => {
+    const c = COMMANDS[cid];
+    const lvl = game.cmdLevels[cid] || 0;
+    const card = document.createElement('div');
+    card.className = 'forge-deck-card';
+    if (game.dojo.selectedCommand === cid) card.classList.add('selected');
+    if (!c.hp && !c.bal && !c.counter) card.classList.add('disabled');
+    card.innerHTML = `
+      ${lvl !== 0 ? `<span class="level">${lvl > 0 ? '+' : ''}${lvl}</span>` : ''}
+      <svg class="forge-deck-icon"><use href="#${c.icon}"/></svg>
+      <div class="forge-deck-name">${c.name}</div>
+    `;
+    if (c.hp || c.bal || c.counter) card.onclick = () => { game.dojo.selectedCommand = cid; renderDojo(); };
+    deckEl.appendChild(card);
+  });
+
+  const optTitle = $('dojo-options-title');
+  const optEl = $('dojo-options');
+  optEl.innerHTML = '';
+  if (game.dojo.selectedCommand) {
+    optTitle.classList.remove('disabled');
+    const cid = game.dojo.selectedCommand;
+    const c = COMMANDS[cid];
+    const lvl = game.cmdLevels[cid] || 0;
+    const dmgPreview = c.hp ? `${c.hp[0]+lvl}~${c.hp[1]+lvl}` : '균형 ' + (c.bal ? `${c.bal[0]}~${c.bal[1]}` : '반격');
+
+    const options = [
+      { id: 'safe',     name: '안전 수련', detail: `+1 데미지 (현재 ${dmgPreview})`,         cost: applyMerchantDiscount(40), failChance: 0,    bonus: 1 },
+      { id: 'risky',    name: '도박 수련', detail: `+2 데미지 · 10% 실패 시 변화 없음`,    cost: applyMerchantDiscount(60), failChance: 0.10, bonus: 2 },
+      { id: 'reckless', name: '광기 수련', detail: `+4 데미지 · 35% 실패 시 -2 페널티`,    cost: applyMerchantDiscount(90), failChance: 0.35, bonus: 4 },
+    ];
+    const visible = game.classId === 'merchant' ? options.filter(o => o.id !== 'reckless') : options;
+
+    visible.forEach(opt => {
+      const div = document.createElement('div');
+      div.className = 'forge-option';
+      if (opt.cost > game.player.gold) div.classList.add('disabled');
+      div.innerHTML = `
+        <div>
+          <div class="forge-option-name">${opt.name}</div>
+          <div class="forge-option-detail">${opt.detail}</div>
+        </div>
+        <div class="forge-option-cost">${opt.cost}</div>
+      `;
+      if (opt.cost <= game.player.gold) div.onclick = () => doDojo(opt);
+      optEl.appendChild(div);
+    });
+  } else {
+    optTitle.classList.add('disabled');
+    optEl.innerHTML = '<div class="empty-state">먼저 수련할 기예를 고르라.</div>';
+  }
+}
+
+function doDojo(opt) {
+  const cid = game.dojo.selectedCommand;
+  game.player.gold -= opt.cost;
+  const failed = Math.random() < opt.failChance;
+  let msg = '';
+  if (failed) {
+    if (opt.id === 'reckless') {
+      game.cmdLevels[cid] = Math.max(-2, (game.cmdLevels[cid] || 0) - 2);
+      msg = `실패! 손이 흐트러졌다. (-2)`;
+    } else {
+      msg = `실패. 다시 잡아보라.`;
+    }
+  } else {
+    game.cmdLevels[cid] = (game.cmdLevels[cid] || 0) + opt.bonus;
+    msg = `성공! ${COMMANDS[cid].name} +${opt.bonus}.`;
+  }
+  $('dojo-flavor').textContent = msg;
+  game.dojo.selectedCommand = null;
+  renderDojo();
+}
+
+$('dojo-leave-btn').onclick = () => { enterMap(); };
+
+// ============================================================
+// ADMIN CONSOLE — 데이터 편집 + GitHub 자동 commit
+// ============================================================
+const ADMIN = {
+  currentFile: 'commands',
+  // 작업 중인 데이터 (편집 본). 저장 시 file에 반영, GitHub 보내기.
+  drafts: {},   // { commands: {...}, classes: {...}, ... }
+  shas:   {},   // GitHub의 현재 sha (PUT 시 필요). 없으면 새 파일.
+  github: null, // { repo, branch, token } from localStorage
+  busyMsg: null,
+};
+
+const ADMIN_LS_KEY = 'ikkiuchi-admin-github';
+
+function adminLoadGithub() {
+  try {
+    const raw = localStorage.getItem(ADMIN_LS_KEY);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj.repo || !obj.token) return null;
+    return obj;
+  } catch { return null; }
+}
+function adminSaveGithub(cfg) {
+  if (cfg) localStorage.setItem(ADMIN_LS_KEY, JSON.stringify(cfg));
+  else localStorage.removeItem(ADMIN_LS_KEY);
+  ADMIN.github = cfg;
+}
+
+function adminSetStatus(msg, kind = '') {
+  const el = $('admin-status');
+  el.textContent = msg || (ADMIN.github ? `연결: ${ADMIN.github.repo} (${ADMIN.github.branch})` : '연결 안 됨 — 변경은 이 기기에만 저장됨');
+  el.className = 'admin-status' + (kind ? ' ' + kind : '');
+}
+
+// ===== 진입 / 떠나기 =====
+async function openAdmin() {
+  ADMIN.github = adminLoadGithub();
+  // drafts에 현재 게임 데이터(stripped)를 깊은 복사로 채움. 단 _comment는 원본에서 다시 가져와 보존.
+  const files = ['commands', 'classes', 'enemies', 'weapons', 'map', 'balance'];
+  for (const f of files) {
+    if (!ADMIN.drafts[f]) {
+      // localStorage 우선, 없으면 fetch (캐시 무시)
+      const local = localStorage.getItem(`ikkiuchi-data-${f}`);
+      if (local) {
+        try { ADMIN.drafts[f] = JSON.parse(local); continue; }
+        catch (e) { /* fallthrough */ }
+      }
+      try {
+        const r = await fetch(`./data/${f}.json?t=${Date.now()}`);
+        ADMIN.drafts[f] = await r.json();
+      } catch (e) {
+        ADMIN.drafts[f] = {};
+      }
+    }
+  }
+  showScreen('admin');
+  ADMIN.currentFile = 'commands';
+  document.querySelectorAll('.admin-tab').forEach(b => b.classList.toggle('active', b.dataset.file === 'commands'));
+  adminSetStatus('');
+  renderAdminBody();
+}
+
+function closeAdmin() {
+  // drafts는 보존 (다시 들어오면 그대로). 게임 데이터는 변경된 게 있으면 다시 로드.
+  showScreen('class-select');
+  // 적용된 변경사항 재로드
+  reloadDataFromLocal();
+  renderClassSelect();
+}
+
+// localStorage에 저장된 변경분을 게임 데이터 변수에 다시 반영.
+function reloadDataFromLocal() {
+  const files = ['commands', 'classes', 'enemies', 'weapons', 'map', 'balance'];
+  for (const f of files) {
+    const local = localStorage.getItem(`ikkiuchi-data-${f}`);
+    if (!local) continue;
+    try {
+      const d = stripComments(JSON.parse(local));
+      if (f === 'commands') COMMANDS = d;
+      else if (f === 'classes') CLASSES = d;
+      else if (f === 'enemies') ENEMIES = d;
+      else if (f === 'weapons') WEAPONS = d;
+      else if (f === 'map')     { MAP = d.stages; SHOP_POOL = d.shopPool; }
+      else if (f === 'balance') {
+        BALANCE = d;
+        INTENT_KO = d.intent.labels;
+        INTENT_DIR = d.intent.directions;
+        INTENT_COST = d.intent.costs;
+      }
+    } catch (e) { console.warn('Bad local override:', f, e); }
+  }
+}
+
+// ===== 탭 전환 =====
+document.querySelectorAll('.admin-tab').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.admin-tab').forEach(b => b.classList.toggle('active', b === btn));
+    ADMIN.currentFile = btn.dataset.file;
+    renderAdminBody();
+  };
+});
+
+// ===== 본문 렌더링 =====
+function renderAdminBody() {
+  const body = $('admin-body');
+  const file = ADMIN.currentFile;
+  const data = ADMIN.drafts[file];
+  if (!data) { body.innerHTML = '<div class="adm-empty">데이터 없음</div>'; return; }
+
+  // map.json은 특수 — stages 배열 + shopPool 배열
+  if (file === 'map') { renderAdminMap(data); return; }
+  // balance.json은 평면 객체 — 중첩이 있어도 그룹별로
+  if (file === 'balance') { renderAdminBalance(data); return; }
+
+  // 일반 객체 (commands/classes/enemies/weapons) — 키-값 행으로
+  body.innerHTML = '';
+  const keys = Object.keys(data).filter(k => k !== '_comment');
+  if (keys.length === 0) {
+    body.innerHTML = '<div class="adm-empty">비어있다. 행 추가를 눌러 시작.</div>';
+    return;
+  }
+  keys.forEach(k => body.appendChild(buildRowCard(file, k, data[k])));
+}
+
+// 한 행 = 한 객체 (id로 식별).
+function buildRowCard(file, key, val) {
+  const card = document.createElement('div');
+  card.className = 'adm-row';
+
+  const head = document.createElement('div');
+  head.className = 'adm-row-head';
+  head.innerHTML = `
+    <span class="adm-row-key">${escapeHtml(key)}</span>
+    <span class="adm-row-name">${escapeHtml(val.name || val.id || '(이름 없음)')}</span>
+    <span class="adm-row-summary">${escapeHtml(rowSummary(file, val))}</span>
+    <span class="adm-row-toggle">▶</span>
+  `;
+  head.onclick = () => card.classList.toggle('expanded');
+  card.appendChild(head);
+
+  const body = document.createElement('div');
+  body.className = 'adm-row-body';
+  body.appendChild(buildObjectEditor(val, (newVal) => {
+    ADMIN.drafts[file][key] = newVal;
+    // 헤더 요약 갱신
+    head.querySelector('.adm-row-name').textContent = newVal.name || newVal.id || '(이름 없음)';
+    head.querySelector('.adm-row-summary').textContent = rowSummary(file, newVal);
+  }));
+
+  // 행 액션
+  const actions = document.createElement('div');
+  actions.className = 'adm-row-actions';
+
+  const dupBtn = document.createElement('button');
+  dupBtn.className = 'dup';
+  dupBtn.textContent = '복제';
+  dupBtn.onclick = () => {
+    let newKey = key + '_copy';
+    let i = 2;
+    while (ADMIN.drafts[file][newKey]) newKey = key + '_copy' + (i++);
+    ADMIN.drafts[file][newKey] = JSON.parse(JSON.stringify(val));
+    if (ADMIN.drafts[file][newKey].id !== undefined) ADMIN.drafts[file][newKey].id = newKey;
+    renderAdminBody();
+  };
+  actions.appendChild(dupBtn);
+
+  const renameBtn = document.createElement('button');
+  renameBtn.textContent = '키 변경';
+  renameBtn.onclick = () => {
+    const nk = prompt('새 키 (영문/숫자):', key);
+    if (!nk || nk === key) return;
+    if (ADMIN.drafts[file][nk]) { alert('이미 있는 키.'); return; }
+    const ordered = {};
+    Object.keys(ADMIN.drafts[file]).forEach(k => {
+      if (k === key) ordered[nk] = ADMIN.drafts[file][k];
+      else ordered[k] = ADMIN.drafts[file][k];
+    });
+    ADMIN.drafts[file] = ordered;
+    if (ordered[nk].id !== undefined) ordered[nk].id = nk;
+    renderAdminBody();
+  };
+  actions.appendChild(renameBtn);
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'del';
+  delBtn.textContent = '삭제';
+  delBtn.onclick = () => {
+    if (!confirm(`"${key}" 삭제?`)) return;
+    delete ADMIN.drafts[file][key];
+    renderAdminBody();
+  };
+  actions.appendChild(delBtn);
+
+  body.appendChild(actions);
+  card.appendChild(body);
+  return card;
+}
+
+// 한 객체의 모든 필드를 편집 가능한 폼으로 만듦.
+function buildObjectEditor(obj, onChange) {
+  const wrap = document.createElement('div');
+  // _comment는 textarea로 큼직하게
+  Object.keys(obj).forEach(k => {
+    if (k === '_comment') return;  // 위에서 이미 처리하거나 무시
+    wrap.appendChild(buildField(obj, k, () => onChange(obj)));
+  });
+  // 새 필드 추가 버튼
+  const addFieldBtn = document.createElement('button');
+  addFieldBtn.className = '';
+  addFieldBtn.style.cssText = 'background:transparent;border:1px dashed var(--line-soft);color:var(--text-3);padding:5px 10px;font-size:11px;cursor:pointer;margin-top:6px;border-radius:2px;width:100%;font-family:Noto Sans KR,sans-serif;';
+  addFieldBtn.textContent = '＋ 필드 추가';
+  addFieldBtn.onclick = () => {
+    const name = prompt('필드명 (영문):');
+    if (!name || obj[name] !== undefined) return;
+    const valStr = prompt('값 (숫자/문자열/JSON):', '0');
+    if (valStr === null) return;
+    obj[name] = parseFieldValue(valStr);
+    onChange(obj);
+    // 폼 새로고침: 부모 카드의 펼침 유지를 위해 buildRowCard를 다시 부르지 않고 wrap만 갱신
+    wrap.replaceWith(buildObjectEditor(obj, onChange));
+  };
+  wrap.appendChild(addFieldBtn);
+  return wrap;
+}
+
+// 한 필드 = 라벨 + 입력. 타입 추론.
+function buildField(obj, key, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'adm-field';
+  const lbl = document.createElement('label');
+  lbl.textContent = key;
+  wrap.appendChild(lbl);
+
+  const val = obj[key];
+
+  if (typeof val === 'boolean') {
+    const inp = document.createElement('input');
+    inp.type = 'checkbox';
+    inp.checked = val;
+    inp.onchange = () => { obj[key] = inp.checked; onChange(); };
+    wrap.appendChild(inp);
+  } else if (typeof val === 'number') {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.step = Number.isInteger(val) ? '1' : 'any';
+    inp.value = val;
+    inp.oninput = () => {
+      const n = parseFloat(inp.value);
+      if (!isNaN(n)) { obj[key] = n; onChange(); }
+    };
+    wrap.appendChild(inp);
+  } else if (Array.isArray(val)) {
+    // 단순 배열 (수치/문자열) — 콤마로 편집
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = JSON.stringify(val);
+    inp.oninput = () => {
+      try {
+        const parsed = JSON.parse(inp.value);
+        if (Array.isArray(parsed)) { obj[key] = parsed; inp.style.borderColor = ''; onChange(); }
+      } catch { inp.style.borderColor = 'var(--enemy)'; }
+    };
+    wrap.appendChild(inp);
+    const hint = document.createElement('div');
+    hint.className = 'adm-field-hint';
+    hint.textContent = 'JSON 배열, 예: [1,2,3] 또는 ["a","b"]';
+    wrap.appendChild(hint);
+  } else if (val !== null && typeof val === 'object') {
+    // 중첩 객체 — JSON textarea
+    const ta = document.createElement('textarea');
+    ta.value = JSON.stringify(val, null, 2);
+    ta.rows = Math.min(8, ta.value.split('\n').length + 1);
+    ta.oninput = () => {
+      try {
+        const parsed = JSON.parse(ta.value);
+        if (parsed && typeof parsed === 'object') { obj[key] = parsed; ta.style.borderColor = ''; onChange(); }
+      } catch { ta.style.borderColor = 'var(--enemy)'; }
+    };
+    wrap.appendChild(ta);
+  } else {
+    // 문자열 또는 null
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = val == null ? '' : String(val);
+    inp.oninput = () => {
+      // 'all' 같은 특수 문자열 그대로 받음. 다만 숫자처럼 보이면 숫자로 변환.
+      const v = inp.value;
+      if (/^-?\d+(\.\d+)?$/.test(v)) obj[key] = parseFloat(v);
+      else obj[key] = v;
+      onChange();
+    };
+    wrap.appendChild(inp);
+  }
+
+  // 삭제 필드 버튼 (기본/필수 필드는 빼고 — 일단 다 허용)
+  const del = document.createElement('button');
+  del.style.cssText = 'background:transparent;border:none;color:var(--text-3);cursor:pointer;font-size:12px;padding:0 4px';
+  del.title = '필드 삭제';
+  del.textContent = '✕';
+  del.onclick = () => {
+    if (!confirm(`필드 "${key}" 삭제?`)) return;
+    delete obj[key];
+    onChange();
+    wrap.parentElement.replaceChildren(...Array.from(wrap.parentElement.children).filter(c => c !== wrap));
+  };
+  // grid 행 끝에 붙이려면 별도 grid 변경 필요. 우선 라벨 옆에 작은 버튼 추가.
+  lbl.style.position = 'relative';
+  lbl.appendChild(del);
+  del.style.cssText += ';float:right;font-size:10px;opacity:0.5;';
+
+  return wrap;
+}
+
+function parseFieldValue(str) {
+  if (str === '' || str === 'null') return null;
+  if (str === 'true') return true;
+  if (str === 'false') return false;
+  if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str);
+  try { return JSON.parse(str); } catch { return str; }
+}
+
+// 한 행의 짧은 요약 (헤더 우측에 표시).
+function rowSummary(file, v) {
+  if (file === 'commands') {
+    let s = `cost ${v.cost}`;
+    if (v.hp) s += ` · ${v.hp[0]}~${v.hp[1]}`;
+    if (v.staGain) s += ` · +${v.staGain}sta`;
+    return s;
+  }
+  if (file === 'enemies') return `HP ${v.hp} · ${v.style || '-'}`;
+  if (file === 'classes') return `HP ${v.hp} / sta ${v.sta}`;
+  if (file === 'weapons') return `+${v.damageBonus || 0} dmg`;
+  return '';
+}
+
+// ===== map.json — 특수 편집 =====
+function renderAdminMap(data) {
+  const body = $('admin-body');
+  body.innerHTML = '';
+
+  // stages 섹션
+  const stagesPanel = document.createElement('div');
+  stagesPanel.className = 'adm-flat';
+  stagesPanel.innerHTML = '<div class="adm-flat-title">스테이지 진행</div>';
+  data.stages.forEach((stage, idx) => {
+    const card = document.createElement('div');
+    card.className = 'adm-row expanded';
+    card.style.marginBottom = '6px';
+    card.innerHTML = `
+      <div class="adm-row-head">
+        <span class="adm-row-key">stage ${idx + 1}</span>
+        <span class="adm-row-name">${escapeHtml(stage.combat.name || '')}</span>
+        <span class="adm-row-summary">${escapeHtml(stage.combat.enemy)}</span>
+      </div>
+    `;
+    const inner = document.createElement('div');
+    inner.className = 'adm-row-body';
+    inner.appendChild(buildObjectEditor(stage, (nv) => { data.stages[idx] = nv; }));
+    const acts = document.createElement('div');
+    acts.className = 'adm-row-actions';
+    const del = document.createElement('button');
+    del.className = 'del'; del.textContent = '삭제';
+    del.onclick = () => {
+      if (!confirm('이 스테이지 삭제?')) return;
+      data.stages.splice(idx, 1);
+      renderAdminBody();
+    };
+    acts.appendChild(del);
+    inner.appendChild(acts);
+    card.appendChild(inner);
+    stagesPanel.appendChild(card);
+  });
+  body.appendChild(stagesPanel);
+
+  // shopPool 섹션
+  const poolPanel = document.createElement('div');
+  poolPanel.className = 'adm-flat';
+  poolPanel.innerHTML = '<div class="adm-flat-title">상점 풀</div>';
+  const poolField = document.createElement('div');
+  poolField.className = 'adm-field';
+  poolField.innerHTML = `<label>shopPool</label>`;
+  const ta = document.createElement('textarea');
+  ta.value = JSON.stringify(data.shopPool);
+  ta.rows = 2;
+  ta.oninput = () => {
+    try { const arr = JSON.parse(ta.value); if (Array.isArray(arr)) { data.shopPool = arr; ta.style.borderColor = ''; } }
+    catch { ta.style.borderColor = 'var(--enemy)'; }
+  };
+  poolField.appendChild(ta);
+  poolPanel.appendChild(poolField);
+  body.appendChild(poolPanel);
+}
+
+// ===== balance.json — 그룹별 평면 편집 =====
+function renderAdminBalance(data) {
+  const body = $('admin-body');
+  body.innerHTML = '';
+
+  const groups = [
+    { title: '핵심 자원', keys: ['startingGold', 'maxStamina', 'staminaPerTurn'] },
+    { title: '의도 (intent)', keys: ['intent'] },
+    { title: '전투 (combat)', keys: ['combat'] },
+    { title: '상점 (shop)', keys: ['shop'] },
+    { title: '대장간 (forge)', keys: ['forge'] },
+    { title: '수련장 (dojo)', keys: ['dojo'] },
+    { title: 'AI', keys: ['ai'] },
+  ];
+
+  groups.forEach(g => {
+    const panel = document.createElement('div');
+    panel.className = 'adm-flat';
+    panel.innerHTML = `<div class="adm-flat-title">${g.title}</div>`;
+    const inner = document.createElement('div');
+    g.keys.forEach(k => {
+      if (data[k] === undefined) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'adm-field';
+      const lbl = document.createElement('label');
+      lbl.textContent = k;
+      wrap.appendChild(lbl);
+      if (typeof data[k] === 'object' && data[k] !== null) {
+        const ta = document.createElement('textarea');
+        ta.value = JSON.stringify(data[k], null, 2);
+        ta.rows = Math.min(15, (ta.value.match(/\n/g) || []).length + 2);
+        ta.oninput = () => {
+          try { data[k] = JSON.parse(ta.value); ta.style.borderColor = ''; }
+          catch { ta.style.borderColor = 'var(--enemy)'; }
+        };
+        wrap.appendChild(ta);
+      } else {
+        const inp = document.createElement('input');
+        inp.type = typeof data[k] === 'number' ? 'number' : 'text';
+        inp.step = 'any';
+        inp.value = data[k];
+        inp.oninput = () => {
+          const v = inp.value;
+          if (typeof data[k] === 'number' || /^-?\d+(\.\d+)?$/.test(v)) data[k] = parseFloat(v);
+          else data[k] = v;
+        };
+        wrap.appendChild(inp);
+      }
+      inner.appendChild(wrap);
+    });
+    panel.appendChild(inner);
+    body.appendChild(panel);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ===== 행 추가 (현재 탭에 따라) =====
+$('admin-add-btn').onclick = () => {
+  const file = ADMIN.currentFile;
+  if (file === 'map') {
+    const enemyKey = prompt('적 키 (예: bandit):');
+    if (!enemyKey) return;
+    ADMIN.drafts.map.stages.push({ id: ADMIN.drafts.map.stages.length + 1, combat: { type: 'combat', enemy: enemyKey, name: '새 결투' } });
+    renderAdminBody();
+    return;
+  }
+  if (file === 'balance') {
+    alert('balance는 그룹별 편집만 지원합니다. 새 키는 JSON 파일을 직접 수정하세요.');
+    return;
+  }
+  const nk = prompt('새 키 (영문 식별자):');
+  if (!nk) return;
+  if (ADMIN.drafts[file][nk]) { alert('이미 있는 키.'); return; }
+  // 같은 파일의 첫 항목 템플릿으로 복제 (없으면 빈 객체)
+  const firstKey = Object.keys(ADMIN.drafts[file]).find(k => k !== '_comment');
+  const tmpl = firstKey ? JSON.parse(JSON.stringify(ADMIN.drafts[file][firstKey])) : {};
+  if (tmpl.id !== undefined) tmpl.id = nk;
+  if (tmpl.name !== undefined) tmpl.name = nk;
+  ADMIN.drafts[file][nk] = tmpl;
+  renderAdminBody();
+  // 새로 추가된 행 펼침 (스크롤은 안 함 — 본인이 위에서 새로 추가했음을 보임)
+  setTimeout(() => {
+    const cards = document.querySelectorAll('.adm-row');
+    if (cards.length) cards[cards.length - 1].classList.add('expanded');
+  }, 50);
+};
+
+// ===== 저장 — localStorage + GitHub =====
+$('admin-save-btn').onclick = async () => {
+  const file = ADMIN.currentFile;
+  const draft = ADMIN.drafts[file];
+  // 1) localStorage에 즉시 저장 (게임 즉시 반영)
+  try {
+    localStorage.setItem(`ikkiuchi-data-${file}`, JSON.stringify(draft, null, 2));
+  } catch (e) {
+    adminSetStatus('localStorage 저장 실패: ' + e.message, 'err');
+    return;
+  }
+
+  // 2) GitHub 설정 있으면 commit
+  if (!ADMIN.github) {
+    adminSetStatus('이 기기에 저장됨 (GitHub 미연결). 영구 저장은 🔑로 토큰 설정.', 'ok');
+    return;
+  }
+  adminSetStatus('GitHub에 commit 중...', 'busy');
+  try {
+    const result = await githubPutFile(file, draft);
+    ADMIN.shas[file] = result.content.sha;
+    adminSetStatus(`✓ commit 됨: ${result.commit.sha.slice(0, 7)} — Pages 재배포 1~2분 소요`, 'ok');
+  } catch (e) {
+    adminSetStatus('GitHub 저장 실패: ' + e.message + ' (이 기기엔 저장됨)', 'err');
+  }
+};
+
+// GitHub Contents API: GET 현재 sha → PUT 새 내용
+async function githubPutFile(file, data) {
+  const { repo, branch, token } = ADMIN.github;
+  const path = `data/${file}.json`;
+  const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+  const headers = {
+    'Accept': 'application/vnd.github+json',
+    'Authorization': `Bearer ${token}`,
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+
+  // 현재 sha 가져오기 (캐시 안 된 경우)
+  let sha = ADMIN.shas[file];
+  if (!sha) {
+    const get = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, { headers });
+    if (get.ok) {
+      const j = await get.json();
+      sha = j.sha;
+      ADMIN.shas[file] = sha;
+    } else if (get.status !== 404) {
+      throw new Error(`GET 실패: ${get.status} ${(await get.text()).slice(0, 100)}`);
+    }
+    // 404면 새 파일이라 sha 없음
+  }
+
+  // 콘텐츠를 base64로 (UTF-8 안전)
+  const content = JSON.stringify(data, null, 2) + '\n';
+  const b64 = b64EncodeUtf8(content);
+
+  const body = {
+    message: `Edit ${path} via admin console`,
+    content: b64,
+    branch,
+  };
+  if (sha) body.sha = sha;
+
+  const put = await fetch(apiUrl, {
+    method: 'PUT',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!put.ok) {
+    const txt = await put.text();
+    throw new Error(`PUT 실패: ${put.status} ${txt.slice(0, 200)}`);
+  }
+  return put.json();
+}
+
+function b64EncodeUtf8(str) {
+  // btoa는 ASCII만 안전 — UTF-8 처리
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+// ===== 리셋 =====
+$('admin-reset-btn').onclick = async () => {
+  const file = ADMIN.currentFile;
+  if (!confirm(`"${file}" 탭의 변경사항을 버리고 원본 파일로 되돌릴까?`)) return;
+  localStorage.removeItem(`ikkiuchi-data-${file}`);
+  try {
+    const r = await fetch(`./data/${file}.json?t=${Date.now()}`);
+    ADMIN.drafts[file] = await r.json();
+    renderAdminBody();
+    adminSetStatus(`"${file}" 원본으로 리셋됨.`, 'ok');
+  } catch (e) {
+    adminSetStatus('원본 로딩 실패: ' + e.message, 'err');
+  }
+};
+
+// ===== 내보내기 =====
+$('admin-export-btn').onclick = () => {
+  const file = ADMIN.currentFile;
+  const data = ADMIN.drafts[file];
+  const blob = new Blob([JSON.stringify(data, null, 2) + '\n'], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${file}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  adminSetStatus(`${file}.json 다운로드됨.`, 'ok');
+};
+
+// ===== Setup modal (GitHub 토큰) =====
+$('admin-settings-btn').onclick = () => {
+  const cfg = adminLoadGithub();
+  $('admin-repo').value = cfg ? cfg.repo : '';
+  $('admin-branch').value = cfg ? cfg.branch : 'main';
+  $('admin-token').value = cfg ? cfg.token : '';
+  $('admin-setup-status').textContent = '';
+  $('admin-setup-status').className = 'admin-setup-status';
+  $('modal-admin-setup').classList.remove('hidden');
+};
+$('admin-setup-cancel').onclick = () => $('modal-admin-setup').classList.add('hidden');
+$('admin-setup-clear').onclick = () => {
+  if (!confirm('GitHub 연동 정보 삭제?')) return;
+  adminSaveGithub(null);
+  $('admin-setup-status').textContent = '지워졌다.';
+  $('admin-setup-status').className = 'admin-setup-status ok';
+  $('admin-repo').value = '';
+  $('admin-token').value = '';
+  ADMIN.shas = {};
+};
+$('admin-setup-save').onclick = async () => {
+  const repo = $('admin-repo').value.trim();
+  const branch = $('admin-branch').value.trim() || 'main';
+  const token = $('admin-token').value.trim();
+  if (!repo || !token) { $('admin-setup-status').textContent = 'repo와 token 모두 필요.'; $('admin-setup-status').className = 'admin-setup-status err'; return; }
+  $('admin-setup-status').textContent = '연결 확인 중...';
+  $('admin-setup-status').className = 'admin-setup-status';
+  // 간단 검증: repo의 commits 1개만 가져오기
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repo}/commits?per_page=1&sha=${encodeURIComponent(branch)}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error(`${r.status}: ${txt.slice(0, 120)}`);
+    }
+    adminSaveGithub({ repo, branch, token });
+    $('admin-setup-status').textContent = '✓ 연결됨. 이제 저장 시 자동 commit.';
+    $('admin-setup-status').className = 'admin-setup-status ok';
+    setTimeout(() => $('modal-admin-setup').classList.add('hidden'), 1200);
+    adminSetStatus('');
+  } catch (e) {
+    $('admin-setup-status').textContent = '실패: ' + e.message;
+    $('admin-setup-status').className = 'admin-setup-status err';
+  }
+};
+
+// ===== Admin 진입/탈출 버튼 =====
+$('open-admin-btn').onclick = () => openAdmin();
+$('admin-back-btn').onclick = () => closeAdmin();
+
+// showScreen에서 admin 인식하도록 — showScreen 함수가 이미 .screen.active 토글하므로 OK
+// 다만 init 시작 시 admin은 숨김. (CSS 'display:none' 기본값으로 됨)
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  try {
+    await loadGameData();
+    renderClassSelect();
+  } catch (err) {
+    console.error('데이터 로딩 실패:', err);
+    document.body.innerHTML = `<div style="padding:40px;font-family:sans-serif;color:#1a1410">
+      <h2>데이터를 불러오지 못했다.</h2>
+      <p>이 게임은 같은 폴더의 <code>data/*.json</code> 파일들이 필요하다.</p>
+      <p>로컬에서 열려면 <code>file://</code> 대신 <code>http://</code> 서버로 열어야 한다 — 자세한 내용은 README.md 참조.</p>
+      <pre style="background:#f1ead9;padding:12px">${err.message}</pre>
+    </div>`;
+  }
+}
+init();
+
+</script>
+</body>
+</html>

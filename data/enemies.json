@@ -1,0 +1,70 @@
+{
+  "_comment": "적 데이터. mapSize는 이 적과 싸울 때의 맵 크기 (이동 가능 칸수). style은 ai.js의 weight 분기 키. deck은 commands.json의 키 배열.",
+
+  "bandit": {
+    "name": "산적",
+    "hp": 18,
+    "bal": 18,
+    "sta": 5,
+    "evade": 0.05,
+    "deck": ["slash", "cleave", "block", "dodge"],
+    "style": "aggressive",
+    "goldReward": 30,
+    "mapSize": 6,
+    "flavor": "오솔길에 서 있는 도적."
+  },
+
+  "thrower": {
+    "name": "표창 무뢰배",
+    "hp": 17,
+    "bal": 17,
+    "sta": 7,
+    "evade": 0.10,
+    "deck": ["thrust", "shuriken", "shuriken", "dodge", "block"],
+    "style": "kiter",
+    "goldReward": 40,
+    "mapSize": 8,
+    "flavor": "폐가 마당. 거리를 두려는 자."
+  },
+
+  "axeman": {
+    "name": "거구의 도끼병",
+    "hp": 30,
+    "bal": 32,
+    "sta": 4,
+    "evade": 0.02,
+    "deck": ["cleave", "lunge", "block", "push", "balancebreak"],
+    "style": "brute",
+    "goldReward": 60,
+    "mapSize": 5,
+    "isElite": true,
+    "flavor": "석교를 가로막는 거구. 좁은 다리."
+  },
+
+  "assassin": {
+    "name": "그림자 자객",
+    "hp": 20,
+    "bal": 16,
+    "sta": 8,
+    "evade": 0.20,
+    "deck": ["thrust", "parry", "dodge", "feint", "sliplash"],
+    "style": "evasive",
+    "goldReward": 50,
+    "mapSize": 7,
+    "flavor": "대숲 그림자 속의 자객."
+  },
+
+  "saint": {
+    "name": "검호",
+    "hp": 38,
+    "bal": 36,
+    "sta": 6,
+    "evade": 0.10,
+    "deck": ["slash", "cleave", "thrust", "lunge", "block", "dodge", "parry", "push", "iai"],
+    "style": "adaptive",
+    "goldReward": 100,
+    "mapSize": 8,
+    "isBoss": true,
+    "flavor": "벚꽃 아래 너른 터에 선 마지막 적."
+  }
+}

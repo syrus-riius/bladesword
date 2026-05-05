@@ -1,0 +1,13 @@
+{
+  "_comment": "스테이지 진행. stages 배열의 각 항목은 한 스테이지의 결투. shopPool은 상점에 등장 가능한 기예. 매 스테이지마다 상점/대장간/수련장은 항상 들를 수 있음.",
+
+  "stages": [
+    { "id": 1, "combat": { "type": "combat", "enemy": "bandit",   "name": "오솔길의 산적" } },
+    { "id": 2, "combat": { "type": "combat", "enemy": "thrower",  "name": "폐가의 무뢰배" } },
+    { "id": 3, "combat": { "type": "combat", "enemy": "axeman",   "name": "석교 위의 거구", "isElite": true } },
+    { "id": 4, "combat": { "type": "combat", "enemy": "assassin", "name": "대숲의 그림자" } },
+    { "id": 5, "combat": { "type": "combat", "enemy": "saint",    "name": "검호와의 결투", "isBoss": true } }
+  ],
+
+  "shopPool": ["cleave", "lunge", "killingblow", "balancebreak", "rest", "push", "block", "thrust"]
+}
