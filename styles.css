@@ -1,50 +1,82 @@
 :root {
-  --bg: #f1ead9;
-  --surface: #faf6ec;
-  --surface-deep: #e8dec5;
-  --line: #1a1410;
-  --line-soft: #b8a884;
+  /* 아케이드 다크 배경 */
+  --bg: #0a0a0a;
+  --surface: #1a1a1a;
+  --surface-deep: #0f0f0f;
+  --line: #ff0040;
+  --line-soft: #ff004066;
 
-  --text-1: #1a1410;
-  --text-2: #443c33;
-  --text-3: #6a5d4d;
-  --text-inv: #faf6ec;
+  /* 네온 텍스트 */
+  --text-1: #ffffff;
+  --text-2: #cccccc;
+  --text-3: #888888;
+  --text-inv: #0a0a0a;
 
-  --enemy: #b8232f;
-  --enemy-deep: #7a0e16;
-  --enemy-soft: #f5e3e3;
-  --enemy-tint: rgba(184, 35, 47, 0.06);
+  /* 적 (네온 레드) */
+  --enemy: #ff0040;
+  --enemy-deep: #cc0033;
+  --enemy-soft: #ff004033;
+  --enemy-tint: rgba(255, 0, 64, 0.12);
 
-  --player: #2c4a6b;
-  --player-deep: #1a2f47;
-  --player-soft: #e3eaf2;
-  --player-tint: rgba(44, 74, 107, 0.06);
+  /* 플레이어 (사이버 블루) */
+  --player: #00d9ff;
+  --player-deep: #00aacc;
+  --player-soft: #00d9ff33;
+  --player-tint: rgba(0, 217, 255, 0.12);
 
-  --gold: #b8862c;
-  --gold-deep: #7a5a18;
-  --gold-soft: #f0e3c5;
+  /* 골드 (네온 골드) */
+  --gold: #ffaa00;
+  --gold-deep: #cc8800;
+  --gold-soft: #ffaa0033;
 
-  --green: #5a7042;
-  --green-deep: #3d4d2e;
-  --sepia: #6b4423;
-  --sepia-soft: #d9c5a8;
+  /* 기력 (네온 그린) */
+  --green: #00ff88;
+  --green-deep: #00cc66;
+  --sepia: #ff6600;
+  --sepia-soft: #ff660033;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   background: var(--bg);
   color: var(--text-1);
-  font-family: 'Noto Sans KR', sans-serif;
+  font-family: 'VT323', 'Noto Sans KR', monospace;
   min-height: 100vh;
   overflow-x: hidden;
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 18px;
+  line-height: 1.3;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
+/* 도트 그리드 배경 (아케이드 느낌) */
 body::before {
-  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 0.10 0'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>");
-  opacity: 0.4; mix-blend-mode: multiply;
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255, 0, 64, 0.03) 1px, rgba(255, 0, 64, 0.03) 2px),
+    repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255, 0, 64, 0.03) 1px, rgba(255, 0, 64, 0.03) 2px);
+  background-size: 4px 4px;
+}
+
+/* CRT 스캔라인 효과 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  opacity: 0.3;
 }
 
 /* All screens fit iPhone 17 Pro logical viewport (402×874pt). */
@@ -63,19 +95,19 @@ body::before {
 
 /* PRIMITIVES */
 .label-en {
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: 10px;
-  letter-spacing: 0.18em;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-3);
+  line-height: 1.4;
 }
 .label-ko {
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-family: 'Press Start 2P', 'Noto Sans KR', monospace;
+  font-size: 8px;
+  letter-spacing: 0.08em;
   color: var(--text-2);
-  font-weight: 500;
+  line-height: 1.4;
 }
 
 /* TITLE BAR */
@@ -98,20 +130,19 @@ body::before {
   transform: translateX(-50%);
 }
 .title-main {
-  font-family: 'Noto Serif KR', serif;
-  font-weight: 900;
-  font-size: 20px;
-  letter-spacing: 0.4em;
+  font-family: 'VT323', monospace;
+  font-size: 32px;
+  letter-spacing: 0.3em;
   line-height: 1;
-  color: var(--text-1);
-  padding-left: 0.4em;
+  color: var(--enemy);
+  text-shadow: 0 0 10px var(--enemy), 0 0 20px var(--enemy);
+  padding-left: 0.3em;
 }
 .title-en {
-  margin-top: 4px;
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 9px;
-  letter-spacing: 0.28em;
+  margin-top: 6px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  letter-spacing: 0.2em;
   color: var(--text-3);
   text-transform: uppercase;
 }
@@ -125,14 +156,14 @@ body::before {
   flex-shrink: 0;
 }
 .section-label .ko {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-size: 10.5px;
   font-weight: 700;
   color: var(--text-1);
   letter-spacing: 0.06em;
 }
 .section-label .en {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 9px;
   letter-spacing: 0.18em;
@@ -148,7 +179,7 @@ body::before {
 
 /* Matchup table toggle button in section-label */
 .matchup-btn {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -245,7 +276,7 @@ body::before {
   font-weight: 700;
 }
 .matchup-table td.m {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-size: 9.5px;
   font-weight: 700;
   cursor: help;
@@ -317,7 +348,8 @@ body::before {
 .class-card:hover {
   background: var(--line);
   color: var(--text-inv);
-  box-shadow: 0 4px 0 -2px var(--enemy);
+  box-shadow: 0 0 20px var(--enemy), 0 0 40px var(--enemy);
+  border-color: var(--enemy);
 }
 .class-card:hover .class-blurb,
 .class-card:hover .class-mech-desc,
@@ -332,7 +364,7 @@ body::before {
   background: var(--line);
   color: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 50%;
+  /* border-radius removed */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -341,7 +373,7 @@ body::before {
 .class-emblem svg { width: 20px; height: 20px; }
 .class-info { min-width: 0; }
 .class-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.03em;
@@ -373,7 +405,7 @@ body::before {
 }
 .class-stat { text-align: center; }
 .class-stat-num {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-size: 11.5px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -399,7 +431,7 @@ body::before {
   margin-bottom: 2px;
 }
 .class-mech-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 11px;
   margin-bottom: 1px;
@@ -455,7 +487,7 @@ body::before {
   height: 28px;
   background: var(--player);
   color: var(--text-inv);
-  border-radius: 50%;
+  /* border-radius removed */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -464,7 +496,7 @@ body::before {
 .player-bar-emblem svg { width: 14px; height: 14px; }
 .player-bar-info { flex: 1; min-width: 0; }
 .player-bar-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 12px;
   letter-spacing: 0.03em;
@@ -480,7 +512,7 @@ body::before {
   margin-right: 3px;
 }
 .player-bar-stats span .val {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-weight: 600;
   color: var(--text-1);
   font-variant-numeric: tabular-nums;
@@ -558,7 +590,7 @@ body::before {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: 50%;
+  /* border-radius removed */
   transition: all 0.2s;
 }
 .map-node-icon svg { width: 15px; height: 15px; }
@@ -578,7 +610,7 @@ body::before {
   flex-shrink: 0;
 }
 .stage-head-num {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 12.5px;
   letter-spacing: 0.06em;
@@ -591,7 +623,7 @@ body::before {
 .stage-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  /* border-radius removed */
   background: var(--surface-deep);
   border: 1px solid var(--line-soft);
 }
@@ -604,7 +636,7 @@ body::before {
   align-items: center;
   gap: 7px;
   margin: 8px 2px 4px;
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-size: 10.5px;
   font-weight: 600;
   color: var(--text-3);
@@ -618,7 +650,7 @@ body::before {
   background: var(--line-soft);
 }
 .map-section-label .en {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 9px;
   letter-spacing: 0.18em;
@@ -640,7 +672,7 @@ body::before {
   background: var(--surface);
   border: 1.5px solid var(--sepia);
   padding: 10px 12px;
-  border-radius: 4px;
+  /* border-radius removed */
 }
 .weapon-card-row {
   display: flex;
@@ -652,7 +684,7 @@ body::before {
   height: 36px;
   background: var(--sepia);
   color: var(--surface);
-  border-radius: 50%;
+  /* border-radius removed */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -661,13 +693,13 @@ body::before {
 .weapon-card-emblem svg { width: 20px; height: 20px; }
 .weapon-card-info { flex: 1; min-width: 0; }
 .weapon-card-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 14px;
   letter-spacing: 0.04em;
 }
 .weapon-card-tier {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-weight: 600;
   color: var(--gold-deep);
   margin-left: 4px;
@@ -680,7 +712,7 @@ body::before {
 
 .map-node-info { flex: 1; min-width: 0; }
 .map-node-type {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 9px;
   letter-spacing: 0.13em;
@@ -689,7 +721,7 @@ body::before {
   transition: color 0.2s;
 }
 .map-node-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 11.5px;
   margin-top: 1px;
@@ -741,7 +773,7 @@ body::before {
 .fighter-emblem {
   width: 22px;
   height: 22px;
-  border-radius: 50%;
+  /* border-radius removed */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -753,7 +785,7 @@ body::before {
 .fighter-emblem svg { width: 12px; height: 12px; }
 .fighter-info { flex: 1; min-width: 0; }
 .fighter-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 11.5px;
   letter-spacing: 0.02em;
@@ -765,7 +797,7 @@ body::before {
 .fighter-card.enemy .fighter-name { color: var(--enemy-deep); }
 .fighter-card.player .fighter-name { color: var(--player-deep); }
 .fighter-tag {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 8.5px;
   letter-spacing: 0.1em;
@@ -785,7 +817,7 @@ body::before {
   gap: 4px;
 }
 .stat-label {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 8.5px;
   font-weight: 600;
@@ -810,7 +842,7 @@ body::before {
 .fill-bal { background: linear-gradient(90deg, var(--gold-deep), var(--gold)); }
 .fill-sta { background: linear-gradient(90deg, var(--green-deep), var(--green)); }
 .stat-num {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-size: 10px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -822,7 +854,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 13px;
   color: var(--text-3);
@@ -859,7 +891,7 @@ body::before {
   margin-bottom: 2px;
 }
 .distance-current {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 11.5px;
   color: var(--enemy);
@@ -937,7 +969,7 @@ body::before {
   position: absolute;
   top: 16px;
   font-size: 13px;
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-weight: 600;
   opacity: 0;
   transition: opacity 0.3s;
@@ -962,7 +994,7 @@ body::before {
   position: absolute;
   top: 4px;
   right: 8px;
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 9.5px;
   letter-spacing: 0.1em;
@@ -1046,7 +1078,7 @@ body::before {
   width: 28px;
   height: 28px;
   border: 2px solid;
-  border-radius: 50%;
+  /* border-radius removed */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1055,7 +1087,7 @@ body::before {
 .clash-side.player .clash-icon { color: var(--player); border-color: var(--player); }
 .clash-side.enemy .clash-icon { color: var(--enemy); border-color: var(--enemy); }
 .clash-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 10.5px;
   margin-top: 2px;
@@ -1070,7 +1102,7 @@ body::before {
   letter-spacing: 0.07em;
 }
 .clash-vs {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 12px;
   color: var(--text-3);
@@ -1083,7 +1115,7 @@ body::before {
   color: var(--text-2);
   line-height: 1.45;
   letter-spacing: 0.005em;
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   max-height: 32px;
   overflow: hidden;
 }
@@ -1111,12 +1143,12 @@ body::before {
   gap: 4px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  /* border-radius removed */
   padding: 8px 6px 9px;
   position: relative;
 }
 .joystick-label {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 9px;
   letter-spacing: 0.2em;
@@ -1130,7 +1162,7 @@ body::before {
   gap: 2px;
   background: var(--surface-deep);
   border: 1px solid var(--line);
-  border-radius: 50px;
+  /* border-radius removed */
   padding: 3px 4px;
   position: relative;
 }
@@ -1138,7 +1170,7 @@ body::before {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 50px;
+  /* border-radius removed */
   background:
     radial-gradient(ellipse at center, transparent 60%, rgba(26,20,16,0.05) 100%);
   pointer-events: none;
@@ -1146,7 +1178,7 @@ body::before {
 .jbtn {
   width: 19px;
   height: 19px;
-  border-radius: 50%;
+  /* border-radius removed */
   border: 1.5px solid var(--line);
   background: var(--surface);
   color: var(--text-1);
@@ -1165,10 +1197,12 @@ body::before {
   display: block;
 }
 .jbtn:hover {
-  background: var(--line);
+  background: var(--player);
   color: var(--text-inv);
   transform: scale(1.15);
   z-index: 5;
+  box-shadow: 0 0 10px var(--player), 0 0 20px var(--player);
+  border-color: var(--player);
 }
 .jbtn.selected {
   background: var(--line);
@@ -1192,7 +1226,7 @@ body::before {
   box-shadow: 0 0 0 2px var(--enemy-deep);
 }
 .joystick-hint {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -1217,7 +1251,7 @@ body::before {
   padding: 0 2px;
 }
 .commands-title {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1259,10 +1293,11 @@ body::before {
   opacity: 1;
 }
 .command-btn.state-usable:hover {
-  background: var(--line);
+  background: var(--enemy);
   color: var(--text-inv);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 0 0 var(--enemy);
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px var(--enemy), 0 0 30px var(--enemy);
+  border-color: var(--enemy);
 }
 
 /* State 2: REACHABLE — 금색 점선 + 부드러운 펄싱, 75% opacity */
@@ -1348,7 +1383,7 @@ body::before {
   display: inline-block;
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  /* border-radius removed */
   border: 1px solid var(--line-soft);
   background: transparent;
   transition: all 0.2s;
@@ -1384,7 +1419,7 @@ body::before {
   height: 22px;
 }
 .command-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -1399,7 +1434,7 @@ body::before {
   position: absolute;
   top: 1px;
   right: 3px;
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-size: 9.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1424,7 +1459,7 @@ body::before {
   position: absolute;
   bottom: 1px;
   right: 3px;
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-size: 8.5px;
   font-weight: 700;
   background: var(--gold);
@@ -1437,7 +1472,7 @@ body::before {
   position: absolute;
   top: 1px;
   left: 3px;
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-size: 8.5px;
   color: var(--enemy);
   font-weight: 700;
@@ -1468,7 +1503,7 @@ body::before {
   background: var(--line);
   color: var(--text-inv);
   border: none;
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.22em;
@@ -1476,7 +1511,11 @@ body::before {
   transition: all 0.2s;
   flex-shrink: 0;
 }
-.commit-btn:hover:not(:disabled) { background: var(--enemy); }
+.commit-btn:hover:not(:disabled) {
+  background: var(--enemy);
+  box-shadow: 0 0 20px var(--enemy), 0 0 40px var(--enemy);
+  transform: translateY(-2px);
+}
 .commit-btn:disabled { background: var(--text-3); cursor: not-allowed; opacity: 0.6; }
 
 @keyframes shake {
@@ -1521,7 +1560,7 @@ body::before {
   width: 38px;
   height: 38px;
   margin: 0 auto 6px;
-  border-radius: 50%;
+  /* border-radius removed */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1532,14 +1571,14 @@ body::before {
 .scene-header.dojo .scene-icon { background: var(--green); }
 .scene-icon svg { width: 19px; height: 19px; }
 .scene-title {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 15px;
   letter-spacing: 0.1em;
   margin-bottom: 1px;
 }
 .scene-sub {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 9.5px;
   letter-spacing: 0.2em;
@@ -1554,7 +1593,7 @@ body::before {
   line-height: 1.5;
   margin-bottom: 8px;
   padding: 0 8px;
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   flex-shrink: 0;
 }
 .purse {
@@ -1569,7 +1608,7 @@ body::before {
 }
 .purse-item { text-align: center; }
 .purse-item .label {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 8.5px;
   letter-spacing: 0.16em;
@@ -1578,7 +1617,7 @@ body::before {
   margin-bottom: 1px;
 }
 .purse-item .val {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
@@ -1616,7 +1655,7 @@ body::before {
   height: 26px;
   background: var(--line);
   color: var(--text-inv);
-  border-radius: 50%;
+  /* border-radius removed */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1626,7 +1665,7 @@ body::before {
 .shop-item-icon svg { width: 13px; height: 13px; }
 .shop-item-info { flex: 1; min-width: 0; }
 .shop-item-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 11.5px;
   letter-spacing: 0.02em;
@@ -1642,7 +1681,7 @@ body::before {
   text-overflow: ellipsis;
 }
 .shop-item-price {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
@@ -1663,7 +1702,7 @@ body::before {
   background: var(--text-2);
   color: var(--text-inv);
   border: none;
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.22em;
@@ -1677,7 +1716,7 @@ body::before {
 /* Forge */
 .forge-step { margin-bottom: 9px; flex-shrink: 0; }
 .forge-step-title {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 11px;
   letter-spacing: 0.06em;
@@ -1718,7 +1757,7 @@ body::before {
   position: absolute;
   top: 1px;
   right: 3px;
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-size: 9px;
   font-weight: 700;
   color: var(--gold);
@@ -1726,7 +1765,7 @@ body::before {
 }
 .forge-deck-icon { width: 16px; height: 16px; }
 .forge-deck-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-size: 9.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -1757,7 +1796,7 @@ body::before {
 .forge-option:hover:not(.disabled) .forge-option-detail { color: var(--surface-deep); }
 .forge-option.disabled { opacity: 0.4; cursor: not-allowed; }
 .forge-option-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 11.5px;
   letter-spacing: 0.03em;
@@ -1770,7 +1809,7 @@ body::before {
   line-height: 1.35;
 }
 .forge-option-cost {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
@@ -1783,7 +1822,7 @@ body::before {
   font-style: italic;
   color: var(--text-3);
   font-size: 10.5px;
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
 }
 
 /* MODALS */
@@ -1820,7 +1859,7 @@ body::before {
   width: 48px;
   height: 48px;
   margin: 0 auto 8px;
-  border-radius: 50%;
+  /* border-radius removed */
   background: var(--text-1);
   color: var(--gold-soft);
   display: flex;
@@ -1831,7 +1870,7 @@ body::before {
 .modal-icon.lose { background: var(--enemy-deep); color: var(--surface); }
 .modal-icon svg { width: 24px; height: 24px; }
 .modal-title {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 15px;
   letter-spacing: 0.1em;
@@ -1843,7 +1882,7 @@ body::before {
   letter-spacing: 0.02em;
   margin-bottom: 11px;
   line-height: 1.5;
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
 }
 .reward-list {
   text-align: left;
@@ -1860,7 +1899,7 @@ body::before {
 }
 .reward-list-item .label { color: var(--text-2); }
 .reward-list-item .val {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   color: var(--text-1);
   font-variant-numeric: tabular-nums;
@@ -1886,7 +1925,7 @@ body::before {
   height: 22px;
   background: var(--surface-deep);
   border: 1px solid var(--line);
-  border-radius: 50%;
+  /* border-radius removed */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1896,13 +1935,13 @@ body::before {
 .deck-modal-icon svg { width: 11px; height: 11px; }
 .deck-modal-info { flex: 1; min-width: 0; }
 .deck-modal-name {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 11.5px;
 }
 .deck-modal-name .lvl {
   color: var(--gold);
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-weight: 600;
   margin-left: 3px;
 }
@@ -1919,7 +1958,7 @@ body::before {
   left: 2px;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  /* border-radius removed */
   border: 1px solid var(--text-1);
   z-index: 2;
 }
@@ -1934,7 +1973,7 @@ body::before {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 9.5px;
   color: var(--text-3);
@@ -1946,7 +1985,7 @@ body::before {
   height: 4px;
   background: var(--surface-deep);
   border: 0.5px solid var(--text-3);
-  border-radius: 2px;
+  /* border-radius removed */
   position: relative;
   overflow: hidden;
 }
@@ -1963,11 +2002,11 @@ body::before {
   display: none;
   background: var(--enemy);
   color: var(--surface);
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 10px;
   padding: 2px 8px;
-  border-radius: 12px;
+  /* border-radius removed */
   letter-spacing: 0.08em;
   animation: pulse 0.6s ease-in-out infinite alternate;
 }
@@ -1983,7 +2022,7 @@ body::before {
   color: var(--text-2);
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  /* border-radius removed */
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -2024,11 +2063,11 @@ body::before {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 2px;
+  /* border-radius removed */
 }
 .admin-back:hover { background: var(--line); color: var(--surface); }
 .admin-title {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 16px;
   letter-spacing: 0.18em;
@@ -2041,7 +2080,7 @@ body::before {
   background: var(--surface-deep);
   border: 1px solid var(--line-soft);
   width: 32px; height: 32px;
-  border-radius: 50%;
+  /* border-radius removed */
   font-size: 14px;
   cursor: pointer;
   padding: 0;
@@ -2078,7 +2117,7 @@ body::before {
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--text-3);
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -2110,7 +2149,7 @@ body::before {
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  border-radius: 2px;
+  /* border-radius removed */
   color: var(--text-1);
 }
 .admin-tool:hover { background: var(--line); color: var(--surface); }
@@ -2131,7 +2170,7 @@ body::before {
 .adm-row {
   background: var(--surface);
   border: 1px solid var(--line-soft);
-  border-radius: 4px;
+  /* border-radius removed */
   margin-bottom: 8px;
   overflow: hidden;
 }
@@ -2150,7 +2189,7 @@ body::before {
   background: var(--surface-deep);
 }
 .adm-row-key {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 11px;
   color: var(--text-3);
@@ -2163,7 +2202,7 @@ body::before {
 }
 .adm-row-name {
   flex: 1;
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-size: 13.5px;
   font-weight: 700;
   color: var(--text-1);
@@ -2210,7 +2249,7 @@ body::before {
   margin-bottom: 7px;
 }
 .adm-field label {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 11px;
   color: var(--text-3);
@@ -2225,7 +2264,7 @@ body::before {
   font-family: 'Noto Sans KR', sans-serif;
   font-size: 12.5px;
   color: var(--text-1);
-  border-radius: 2px;
+  /* border-radius removed */
   font-weight: 500;
   width: 100%;
   box-sizing: border-box;
@@ -2244,7 +2283,7 @@ body::before {
 .adm-field textarea {
   resize: vertical;
   min-height: 38px;
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-size: 12px;
   font-style: italic;
 }
@@ -2273,7 +2312,7 @@ body::before {
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 2px;
+  /* border-radius removed */
 }
 .adm-row-actions button.del {
   border-color: var(--enemy);
@@ -2296,12 +2335,12 @@ body::before {
 .adm-flat {
   background: var(--surface);
   border: 1px solid var(--line-soft);
-  border-radius: 4px;
+  /* border-radius removed */
   padding: 12px;
   margin-bottom: 12px;
 }
 .adm-flat-title {
-  font-family: 'Noto Serif KR', serif;
+  font-family: 'VT323', monospace;
   font-weight: 700;
   font-size: 13px;
   color: var(--enemy);
@@ -2314,7 +2353,7 @@ body::before {
   text-align: center;
   padding: 30px 20px;
   color: var(--text-3);
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
 }
 
@@ -2331,7 +2370,7 @@ body::before {
   margin-bottom: 4px;
 }
 .admin-setup-group label .hint {
-  font-family: 'EB Garamond', serif;
+  font-family: 'Press Start 2P', monospace;
   font-style: italic;
   font-size: 10.5px;
   color: var(--text-3);
@@ -2346,7 +2385,7 @@ body::before {
   font-family: 'Noto Sans KR', sans-serif;
   font-size: 12.5px;
   color: var(--text-1);
-  border-radius: 2px;
+  /* border-radius removed */
   box-sizing: border-box;
 }
 .admin-setup-group input:focus {
