@@ -1,6 +1,5 @@
 {
   "_comment": "플레이 가능 클래스. weapon은 weapons.json의 키, deck은 commands.json의 키 배열. mechanic은 클래스 고유 효과 (combat.js에서 클래스 ID로 분기 처리).",
-
   "ronin": {
     "id": "ronin",
     "name": "떠돌이 검객",
@@ -10,14 +9,20 @@
     "blurb": "주군 잃은 낭인. 길 위에서 칼 한 자루로 산다.",
     "mechanic": "잔심",
     "mechanicDesc": "같은 기예를 3턴 안 쓰면 다음 사용 시 +50%",
-    "hp": 30,
-    "bal": 30,
-    "sta": 5,
+    "hp": 25,
+    "bal": 10,
+    "sta": 10,
     "evade": 0.1,
     "weapon": "katana",
-    "deck": ["slash", "thrust", "parry", "dodge", "sliplash", "feint"]
+    "deck": [
+      "slash",
+      "thrust",
+      "parry",
+      "dodge",
+      "sliplash",
+      "feint"
+    ]
   },
-
   "dobu": {
     "id": "dobu",
     "name": "삼별초 도부수",
@@ -28,13 +33,19 @@
     "mechanic": "거리 변경 보너스",
     "mechanicDesc": "원거리→근접 진입 시 첫 공격 +60%, 후퇴 시 표창 자동 투척",
     "hp": 28,
-    "bal": 28,
-    "sta": 6,
+    "bal": 10,
+    "sta": 10,
     "evade": 0.15,
     "weapon": "hwando",
-    "deck": ["hwando", "shuriken", "parry", "dodge", "ambush", "feint"]
+    "deck": [
+      "hwando",
+      "shuriken",
+      "parry",
+      "dodge",
+      "ambush",
+      "feint"
+    ]
   },
-
   "merchant": {
     "id": "merchant",
     "name": "비단길 행상",
@@ -45,8 +56,8 @@
     "mechanic": "은전 자루",
     "mechanicDesc": "상점 -25%, 승리 시 골드 +30%, 강화 옵션 절반",
     "hp": 26,
-    "bal": 26,
-    "sta": 5,
+    "bal": 10,
+    "sta": 9,
     "evade": 0.12,
     "weapon": "staff",
     "deck": [
