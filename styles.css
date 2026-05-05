@@ -1204,9 +1204,11 @@ body::after {
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  transition: all 0.12s;
+  transition: all 0.08s;
   font-family: inherit;
   position: relative;
+  touch-action: manipulation; /* 모바일 더블탭 줌 방지 + 터치 최적화 */
+  -webkit-tap-highlight-color: transparent; /* iOS 터치 하이라이트 제거 */
 }
 .jbtn svg {
   width: 12px;

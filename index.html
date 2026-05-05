@@ -1078,12 +1078,24 @@ function enterCombat(enemyId, stageIdx) {
   const holdCost = INTENT_COST['hold'] !== undefined ? INTENT_COST['hold'] : 0;
   $('joystick-hint').textContent = `${holdLabel} · ${holdCost}`;
 
+  // 화면 전환 중 입력 차단
+  game.combat.processing = true;
+
   renderCombatStats();
   buildDistanceTrack();
   renderDistance();
   renderCommands();
   renderMechanicDisplay();
   showScreen('combat');
+
+  // 모바일: 화면 전환 후 리플로우 완료 대기
+  // 조이스틱 버튼이 완전히 렌더링되고 터치 가능해질 때까지 약간의 딜레이
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      // 2 프레임 후: 리플로우/리페인트 완료, 입력 활성화
+      game.combat.processing = false;
+    });
+  });
 }
 
 function renderCombatStats() {
@@ -1357,16 +1369,26 @@ function renderCommands() {
 // 조이스틱 이벤트 핸들러 초기화 함수
 function initJoystickHandlers() {
   document.querySelectorAll('#intent-row .jbtn').forEach(btn => {
-    btn.onclick = () => {
+    // 터치와 클릭 모두 처리하는 핸들러
+    const handleIntent = (e) => {
+      e.preventDefault(); // 300ms 딜레이 방지
       if (!game.combat || game.combat.processing) return;
+
+      // 모든 버튼의 selected 제거
       document.querySelectorAll('#intent-row .jbtn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
+
       game.combat.selectedIntent = btn.dataset.intent;
       const intentLabel = INTENT_KO[btn.dataset.intent] || btn.dataset.intent;
       const intentCost = INTENT_COST[btn.dataset.intent] !== undefined ? INTENT_COST[btn.dataset.intent] : 0;
       $('joystick-hint').textContent = `${intentLabel} · ${intentCost}`;
       renderCommands(); // re-classify cards based on new intent
     };
+
+    // 터치 이벤트 (모바일 우선)
+    btn.addEventListener('touchend', handleIntent, { passive: false });
+    // 클릭 이벤트 (PC 폴백) - touchend가 발생하면 click은 자동으로 무시됨
+    btn.addEventListener('click', handleIntent);
   });
 }
 
