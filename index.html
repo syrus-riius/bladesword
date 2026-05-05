@@ -2954,13 +2954,18 @@ function renderAdminBalance(data) {
         wrap.appendChild(ta);
       } else {
         const inp = document.createElement('input');
-        inp.type = typeof data[k] === 'number' ? 'number' : 'text';
-        inp.step = 'any';
+        const isNum = typeof data[k] === 'number';
+        inp.type = isNum ? 'number' : 'text';
+        if (isNum) inp.step = Number.isInteger(data[k]) ? '1' : 'any';
         inp.value = data[k];
         inp.oninput = () => {
-          const v = inp.value;
-          if (typeof data[k] === 'number' || /^-?\d+(\.\d+)?$/.test(v)) data[k] = parseFloat(v);
-          else data[k] = v;
+          const v = inp.value.trim();
+          if (isNum) {
+            const n = parseFloat(v);
+            if (!isNaN(n)) data[k] = n;
+          } else {
+            data[k] = v;
+          }
         };
         wrap.appendChild(inp);
       }
