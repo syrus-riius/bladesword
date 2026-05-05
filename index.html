@@ -1062,9 +1062,17 @@ function enterCombat(enemyId, stageIdx) {
   $('arrow-player').classList.remove('show');
   $('arrow-enemy').classList.remove('show');
 
-  // Reset intent button
-  document.querySelectorAll('#intent-row .jbtn').forEach(b => b.classList.toggle('selected', b.dataset.intent === 'hold'));
-  $('joystick-hint').textContent = '유지 · 0';
+  // Reset intent button - 명확하게 hold로 초기화
+  document.querySelectorAll('#intent-row .jbtn').forEach(b => {
+    b.classList.remove('selected');
+    if (b.dataset.intent === 'hold') {
+      b.classList.add('selected');
+    }
+  });
+  game.combat.selectedIntent = 'hold';
+  const holdLabel = INTENT_KO['hold'] || '유지';
+  const holdCost = INTENT_COST['hold'] !== undefined ? INTENT_COST['hold'] : 0;
+  $('joystick-hint').textContent = `${holdLabel} · ${holdCost}`;
 
   renderCombatStats();
   buildDistanceTrack();
@@ -1342,18 +1350,21 @@ function renderCommands() {
   });
 }
 
-document.querySelectorAll('#intent-row .jbtn').forEach(btn => {
-  btn.onclick = () => {
-    if (game.combat && game.combat.processing) return;
-    document.querySelectorAll('#intent-row .jbtn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    if (game.combat) {
+// 조이스틱 이벤트 핸들러 초기화 함수
+function initJoystickHandlers() {
+  document.querySelectorAll('#intent-row .jbtn').forEach(btn => {
+    btn.onclick = () => {
+      if (!game.combat || game.combat.processing) return;
+      document.querySelectorAll('#intent-row .jbtn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
       game.combat.selectedIntent = btn.dataset.intent;
-      $('joystick-hint').textContent = `${INTENT_KO[btn.dataset.intent]} · ${INTENT_COST[btn.dataset.intent]}`;
+      const intentLabel = INTENT_KO[btn.dataset.intent] || btn.dataset.intent;
+      const intentCost = INTENT_COST[btn.dataset.intent] !== undefined ? INTENT_COST[btn.dataset.intent] : 0;
+      $('joystick-hint').textContent = `${intentLabel} · ${intentCost}`;
       renderCommands(); // re-classify cards based on new intent
-    }
-  };
-});
+    };
+  });
+}
 
 // ============================================================
 // AI DECISION SYSTEM
@@ -3276,6 +3287,9 @@ async function init() {
   try {
     await loadGameData();
     renderClassSelect();
+
+    // 조이스틱 이벤트 핸들러 초기화 (데이터 로드 후)
+    initJoystickHandlers();
 
     // 아이콘 도감 버튼 이벤트
     $('icon-gallery-btn').onclick = () => {
