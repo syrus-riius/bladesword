@@ -1,7 +1,35 @@
 {
   "_comment": "무기 정의. damageBonus: 모든 공격·찌르기 기예 데미지에 가산. balanceBonus: 균형 데미지 가산. maxDurability: 내구도 최대치 (시작값). 동등급 공격 충돌 시 dura가 닳음. 부서지면 (dura ≤ 0) 모든 데미지 brokenDamageMin~brokenDamageMax (보통 0.1~0.5) 배. 대장간에서 강화 시 damageBonus 증가, 수리 시 dura 회복.",
-
-  "katana": { "name": "카타나", "nameEn": "Katana", "damageBonus": 0, "balanceBonus": 0, "tier": 1, "maxDurability": 100 },
-  "hwando": { "name": "환도",   "nameEn": "Hwando", "damageBonus": 0, "balanceBonus": 0, "tier": 1, "maxDurability": 100 },
-  "staff":  { "name": "단봉",   "nameEn": "Staff",  "damageBonus": 0, "balanceBonus": 0, "tier": 1, "maxDurability": 120 }
+  "katana": {
+    "name": "카타나",
+    "nameEn": "Katana",
+    "damageBonus": 0,
+    "balanceBonus": 0,
+    "tier": 1,
+    "maxDurability": 100
+  },
+  "hwando": {
+    "name": "환도",
+    "nameEn": "Hwando",
+    "damageBonus": 0,
+    "balanceBonus": 0,
+    "tier": 1,
+    "maxDurability": 100
+  },
+  "staff": {
+    "name": "단봉",
+    "nameEn": "Staff",
+    "damageBonus": 0,
+    "balanceBonus": 0,
+    "tier": 1,
+    "maxDurability": 120
+  },
+  "dualblade": {
+    "name": "쌍검",
+    "nameEn": "Katana",
+    "damageBonus": 3,
+    "balanceBonus": 0,
+    "tier": 1,
+    "maxDurability": 100
+  }
 }
