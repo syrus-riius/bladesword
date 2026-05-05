@@ -6,7 +6,7 @@
 <title>일기토 v0.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -144,6 +144,7 @@
   <header class="title-bar">
     <div class="title-main">일&nbsp;기&nbsp;토</div>
     <div class="title-en">A Roguelite of Single Combat &middot; v1.1</div>
+    <button class="admin-btn" id="icon-gallery-btn" title="아이콘 도감" aria-label="아이콘 도감" style="right: 44px;">📖</button>
     <button class="admin-btn" id="open-admin-btn" title="데이터 편집 콘솔" aria-label="데이터 편집">⚙</button>
   </header>
 
@@ -183,6 +184,7 @@
 
 <!-- =================== COMBAT =================== -->
 <section id="screen-combat" class="screen">
+  <button class="btn-home" onclick="goHome()">← 메인</button>
   <!-- Side-by-side stats -->
   <div class="versus-bar">
     <div class="fighter-card enemy" id="enemy-card">
@@ -332,6 +334,7 @@
 
 <!-- =================== SHOP =================== -->
 <section id="screen-shop" class="screen">
+  <button class="btn-home" onclick="goHome()">← 메인</button>
   <header class="scene-header shop">
     <div class="scene-icon"><svg><use href="#i-shop"/></svg></div>
     <div class="scene-title">길가의 상점</div>
@@ -366,6 +369,7 @@
 
 <!-- =================== FORGE =================== -->
 <section id="screen-forge" class="screen">
+  <button class="btn-home" onclick="goHome()">← 메인</button>
   <header class="scene-header forge">
     <div class="scene-icon"><svg><use href="#i-forge"/></svg></div>
     <div class="scene-title">산속 대장간</div>
@@ -404,6 +408,7 @@
 
 <!-- =================== DOJO =================== -->
 <section id="screen-dojo" class="screen">
+  <button class="btn-home" onclick="goHome()">← 메인</button>
   <header class="scene-header dojo">
     <div class="scene-icon"><svg><use href="#i-dojo"/></svg></div>
     <div class="scene-title">수련장</div>
@@ -488,6 +493,44 @@
   </div>
 
   <div class="admin-body" id="admin-body"></div>
+</section>
+
+<!-- =================== ICON GALLERY =================== -->
+<section id="screen-icons" class="screen">
+  <button class="btn-home" onclick="goHome()">← 메인</button>
+  <header class="scene-header" style="background: var(--surface); border: 1px solid var(--line); padding: 12px; margin-bottom: 12px;">
+    <div class="scene-icon" style="background: var(--player);"><svg><use href="#i-dojo"/></svg></div>
+    <div class="scene-title">아이콘 도감</div>
+    <div class="scene-sub">Icon Gallery · commands.json 참고용</div>
+  </header>
+
+  <div class="scene-flavor">
+    commands.json의 "icon" 필드에 사용 가능한 아이콘 목록입니다.
+  </div>
+
+  <div class="icon-gallery-scroll">
+    <div class="icon-section">
+      <div class="icon-section-title">기예 아이콘 (Commands)</div>
+      <div class="icon-grid" id="icon-grid-commands"></div>
+    </div>
+
+    <div class="icon-section">
+      <div class="icon-section-title">장소 아이콘 (Places)</div>
+      <div class="icon-grid" id="icon-grid-places"></div>
+    </div>
+
+    <div class="icon-section">
+      <div class="icon-section-title">엠블렘 (Emblems)</div>
+      <div class="icon-grid" id="icon-grid-emblems"></div>
+    </div>
+
+    <div class="icon-section">
+      <div class="icon-section-title">기타 (Misc)</div>
+      <div class="icon-grid" id="icon-grid-misc"></div>
+    </div>
+  </div>
+
+  <button class="shop-back-btn" onclick="showScreen('class')">닫기</button>
 </section>
 
 <!-- =================== ADMIN GITHUB SETUP MODAL =================== -->
@@ -732,6 +775,12 @@ function showScreen(name) {
   $('screen-' + name).classList.add('active');
   window.scrollTo(0, 0);
   game.phase = name;
+}
+
+function goHome() {
+  if (!confirm('진행 중인 게임을 포기하고 메인으로 돌아가시겠습니까?')) return;
+  game = null;
+  showScreen('class');
 }
 
 // ============================================================
@@ -2510,6 +2559,47 @@ function doDojo(opt) {
 $('dojo-leave-btn').onclick = () => { enterMap(); };
 
 // ============================================================
+// ICON GALLERY
+// ============================================================
+// 사용 가능한 아이콘 도감 페이지
+// commands.json의 icon 필드에 사용할 수 있는 아이콘 ID 목록 표시
+// 아이콘 클릭 시 ID를 클립보드에 복사
+
+const ICON_CATEGORIES = {
+  commands: ['i-attack', 'i-thrust', 'i-block', 'i-dodge', 'i-parry', 'i-push', 'i-rest', 'i-feint', 'i-advance', 'i-hold', 'i-retreat'],
+  places: ['i-combat', 'i-shop', 'i-forge', 'i-dojo', 'i-boss'],
+  emblems: ['e-ronin', 'e-dobu', 'e-merchant', 'warrior-r', 'warrior-l'],
+  misc: ['i-potion', 'i-trophy', 'i-skull']
+};
+
+function renderIconGallery() {
+  Object.keys(ICON_CATEGORIES).forEach(category => {
+    const grid = $(`icon-grid-${category}`);
+    grid.innerHTML = '';
+    ICON_CATEGORIES[category].forEach(iconId => {
+      const card = document.createElement('div');
+      card.className = 'icon-card';
+      card.style.position = 'relative';
+      card.innerHTML = `
+        <svg class="icon-card-icon"><use href="#${iconId}"/></svg>
+        <div class="icon-card-name">${iconId}</div>
+      `;
+      card.onclick = () => {
+        // 클립보드에 복사
+        navigator.clipboard.writeText(iconId).then(() => {
+          const copiedMsg = document.createElement('div');
+          copiedMsg.className = 'icon-card-copied';
+          copiedMsg.textContent = 'Copied!';
+          card.appendChild(copiedMsg);
+          setTimeout(() => copiedMsg.remove(), 1000);
+        });
+      };
+      grid.appendChild(card);
+    });
+  });
+}
+
+// ============================================================
 // ADMIN CONSOLE
 // ============================================================
 // 런타임 데이터 편집 + GitHub 자동 commit
@@ -3186,6 +3276,12 @@ async function init() {
   try {
     await loadGameData();
     renderClassSelect();
+
+    // 아이콘 도감 버튼 이벤트
+    $('icon-gallery-btn').onclick = () => {
+      renderIconGallery();
+      showScreen('icons');
+    };
   } catch (err) {
     console.error('데이터 로딩 실패:', err);
     document.body.innerHTML = `<div style="padding:40px;font-family:sans-serif;color:#1a1410">
