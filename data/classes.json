@@ -13,7 +13,7 @@
     "hp": 30,
     "bal": 30,
     "sta": 5,
-    "evade": 0.10,
+    "evade": 0.1,
     "weapon": "katana",
     "deck": ["slash", "thrust", "parry", "dodge", "sliplash", "feint"]
   },
@@ -49,6 +49,14 @@
     "sta": 5,
     "evade": 0.12,
     "weapon": "staff",
-    "deck": ["staffstrike", "staffsweep", "parry", "dodge", "haggle", "feint"]
+    "deck": [
+      "staffstrike",
+      "staffsweep",
+      "parry",
+      "dodge",
+      "haggle",
+      "feint",
+      "stoneThrow"
+    ]
   }
 }

@@ -1031,6 +1031,9 @@ function enterCombat(enemyId, stageIdx) {
     playerBroken: false,
     // 검 놓침 상태
     playerDisarmed: false,
+    // v1.3: 견제 디버프 (다음 합 동안 효과)
+    enemyDebuff: null,
+    playerDebuff: null,
   };
 
   game.deck.forEach(cid => {
@@ -1718,6 +1721,9 @@ async function resolveTurn() {
   game.combat.selectedIntent = 'hold';
   game.combat.processing = false;
 
+  // v1.3: 견제 디버프 카운트 감소 — 매 합 끝
+  tickDebuffs();
+
   // 검 놓침 굴림 — 보스전이면 발생 안 함. 이미 놓친 상태면 재굴림 안 함.
   const disarmCfg = BALANCE.disarm || {};
   const isBoss = !!(ENEMIES[game.combat.enemyId] && ENEMIES[game.combat.enemyId].isBoss);
@@ -1804,6 +1810,48 @@ function applyClashDuraLoss() {
     if (game.combat.enemy.weaponDura <= 0) game.combat.enemy.weaponBroken = true;
   }
 }
+// ============================================================
+// v1.3 헬퍼: 막기 관통률을 공격자 speed에 따라 차등 적용
+// balance.json의 combat.blockPenetrationBySpeed 우선, 없으면 기본값 사용.
+// 카드의 blockPierceBonus도 합산 (Speed 3 공격 보강용).
+// ============================================================
+function getBlockPenetration(attackerCmd) {
+  const cfg = (BALANCE.combat && BALANCE.combat.blockPenetrationBySpeed) || {};
+  const sp = attackerCmd.speed ?? 2;
+  const defaults = { 0: 0.50, 1: 0.35, 2: 0.25, 3: 0.45, 4: 0.10 };
+  let base = cfg[String(sp)] ?? cfg[sp] ?? defaults[sp] ?? 0.25;
+  if (attackerCmd.blockPierceBonus) base += attackerCmd.blockPierceBonus;
+  return Math.min(base, 0.95);
+}
+
+// ============================================================
+// v1.3 헬퍼: 견제(feint) 디버프 곱셈 — 데미지에 적용
+// 호출 시 turnsLeft 감소. 0이 되면 자동 해제.
+// 빗나감 발생 여부 별도 체크는 호출자가 처리.
+// ============================================================
+function consumeDebuffDamageMult(side) {
+  const key = side === 'enemy' ? 'enemyDebuff' : 'playerDebuff';
+  const d = game.combat[key];
+  if (!d || d.turnsLeft <= 0) return 1;
+  const mult = d.damageMult ?? 1;
+  return mult;
+}
+function consumeDebuffMissChance(side) {
+  const key = side === 'enemy' ? 'enemyDebuff' : 'playerDebuff';
+  const d = game.combat[key];
+  if (!d || d.turnsLeft <= 0) return 0;
+  return d.missChance ?? 0;
+}
+function tickDebuffs() {
+  ['enemyDebuff', 'playerDebuff'].forEach(k => {
+    const d = game.combat[k];
+    if (d && d.turnsLeft > 0) {
+      d.turnsLeft--;
+      if (d.turnsLeft <= 0) game.combat[k] = null;
+    }
+  });
+}
+
 function resolveCombat(pCmd, eCmd, pValid, eValid) {
 
   const result = { pHpDelta: 0, eHpDelta: 0, pBalDelta: 0, eBalDelta: 0, narrative: '', crit: false };
@@ -1851,8 +1899,18 @@ function resolveCombat(pCmd, eCmd, pValid, eValid) {
   // 우선순위(speed) 처리 — 다른 등급일 때 빠른 쪽이 적중하고 느린 쪽 무효
   // 같은 등급일 때 기존 충돌 표 진행
   // ============================================================
-  const pSpeed = pC.speed ?? 2;
-  const eSpeed = eC.speed ?? 2;
+  let pSpeed = pC.speed ?? 2;
+  let eSpeed = eC.speed ?? 2;
+
+  // v1.3: 일격필살 격상 — 상대 균형이 0이면 즉발(0)로 격상
+  if (pC.instantOnEnemyBalanceZero && game.combat.enemy.bal <= 0) {
+    pSpeed = 0;
+    result.crit = true;
+  }
+  if (eC.instantOnEnemyBalanceZero && game.player.bal <= 0) {
+    eSpeed = 0;
+  }
+
   const speedDiffEnabled = (BALANCE.combat && BALANCE.combat.speedDifferenceBlocks !== false);
 
   // 회피·막기·받아치기 등 방어계는 속도 차이 무시 — 자기를 보호하려 한 것이므로 무시되면 안 됨
@@ -1881,13 +1939,19 @@ function resolveCombat(pCmd, eCmd, pValid, eValid) {
 
   function dealHpToEnemy(base) {
     if (Math.random() < game.combat.enemy.evade) return -1;
-    const dmg = Math.round(base * eBrokenMult * playerWeaponMult());
+    // v1.3: 그대 디버프(상대가 우리에게 견제 걸었음) → 우리 데미지 감소 + 빗나감
+    if (Math.random() < consumeDebuffMissChance('player')) return -1;
+    const debuffMult = consumeDebuffDamageMult('player');
+    const dmg = Math.round(base * eBrokenMult * playerWeaponMult() * debuffMult);
     result.eHpDelta -= dmg;
     return dmg;
   }
   function dealHpToPlayer(base) {
     if (Math.random() < game.player.evade) return -1;
-    const dmg = Math.round(base * pBrokenMult * enemyWeaponMult());
+    // v1.3: 적 디버프(우리가 적에게 견제 걸었음) → 적 데미지 감소 + 빗나감
+    if (Math.random() < consumeDebuffMissChance('enemy')) return -1;
+    const debuffMult = consumeDebuffDamageMult('enemy');
+    const dmg = Math.round(base * pBrokenMult * enemyWeaponMult() * debuffMult);
     result.pHpDelta -= dmg;
     return dmg;
   }
@@ -1919,6 +1983,9 @@ function resolveCombat(pCmd, eCmd, pValid, eValid) {
 
   if (pIs('feint') && eIs('feint')) {
     result.narrative = '서로 거짓을 던진다. 칼은 움직이지 않는다.';
+    // v1.3: 양쪽 모두에게 디버프 부여
+    if (pC.debuff) game.combat.enemyDebuff = { ...pC.debuff, turnsLeft: (pC.debuff.duration ?? 1) + 1 };
+    if (eC.debuff) game.combat.playerDebuff = { ...eC.debuff, turnsLeft: (eC.debuff.duration ?? 1) + 1 };
     return result;
   }
   if (pIs('feint') || eIs('feint')) {
@@ -1932,6 +1999,16 @@ function resolveCombat(pCmd, eCmd, pValid, eValid) {
       const base = pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0;
       const dmg = dealHpToEnemy(base * 0.7);
       result.narrative += ` 그대의 ${pC.name}이 비스듬히 닿는다 (-${dmgStr(dmg)}).`;
+    }
+    // v1.3: 견제 사용자가 디버프 부여 — 다음 합 동안 상대 공격 약화
+    // turnsLeft를 duration+1로 설정 — tickDebuffs가 끝에 한 번 깎으니까 실제 다음 합부터 적용됨
+    if (pIs('feint') && pC.debuff) {
+      game.combat.enemyDebuff = { ...pC.debuff, turnsLeft: (pC.debuff.duration ?? 1) + 1 };
+      result.narrative += ` 적의 다음 행동이 흔들린다.`;
+    }
+    if (eIs('feint') && eC.debuff) {
+      game.combat.playerDebuff = { ...eC.debuff, turnsLeft: (eC.debuff.duration ?? 1) + 1 };
+      result.narrative += ` 그대의 다음 행동이 흔들린다.`;
     }
     return result;
   }
@@ -1968,11 +2045,21 @@ function resolveCombat(pCmd, eCmd, pValid, eValid) {
 
   if (pair('attack', 'block')) {
     if (pIs('block')) {
-      result.eBalDelta -= 4;
-      result.narrative = `적의 ${eC.name}을 받아낸다. 적 자세 흔들림 (균형 -4).`;
+      // v1.3: 그대 막기도 차등 관통 적용 — 적 공격이 일부 뚫림
+      const base = eC.hp ? roll(eC.hp[0], eC.hp[1]) : 0;
+      const through = Math.round(base * getBlockPenetration(eC));
+      if (through > 0) {
+        result.pHpDelta -= through;
+        result.pBalDelta -= 5;
+        result.narrative = `${eC.name}을 받아내지만 일부 뚫린다 (-${through}, 균형 -5).`;
+      } else {
+        result.eBalDelta -= 4;
+        result.narrative = `적의 ${eC.name}을 받아낸다. 적 자세 흔들림 (균형 -4).`;
+      }
     } else {
       const base = pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0;
-      const through = Math.round(base * 0.25);
+      // v1.3: 관통률은 공격자 speed에 따라 차등
+      const through = Math.round(base * getBlockPenetration(pC));
       result.eHpDelta -= through;
       result.eBalDelta -= 5;
       result.narrative = `적이 받아내지만 ${pC.name}이 일부 뚫는다 (-${through}, 균형 -5).`;
@@ -2026,13 +2113,14 @@ function resolveCombat(pCmd, eCmd, pValid, eValid) {
   if (pair('thrust', 'block')) {
     if (pIs('thrust')) {
       const base = pC.hp ? roll(pC.hp[0]+pLvl, pC.hp[1]+pLvl) : 0;
-      const dmg = Math.round(base * 0.55);
+      // v1.3: 관통률 차등 (찌르기는 speed 1이라 기본 35%, blockPierceBonus 있으면 +)
+      const dmg = Math.round(base * getBlockPenetration(pC));
       result.eHpDelta -= dmg;
       result.eBalDelta -= 6;
       result.narrative = `방어를 뚫는 ${pC.name} (-${dmg}, 균형 -6).`;
     } else {
       const base = eC.hp ? roll(eC.hp[0], eC.hp[1]) : 0;
-      const dmg = Math.round(base * 0.55);
+      const dmg = Math.round(base * getBlockPenetration(eC));
       result.pHpDelta -= dmg;
       result.pBalDelta -= 6;
       result.narrative = `적의 ${eC.name}이 방어를 뚫는다 (-${dmg}, 균형 -6).`;

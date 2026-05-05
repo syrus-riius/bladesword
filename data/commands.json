@@ -1,23 +1,23 @@
 {
-  "_comment": "기예 정의. speed: 우선순위 (낮을수록 빠름). 0=즉발, 1=빠름, 2=보통, 3=느림, 4=매우 느림. 다른 speed면 빠른 쪽이 먼저 적중하고 느린 쪽은 무효. 같은 speed면 양쪽 충돌(matchup 표 적용). 자세한 튜닝 가이드는 README.md 참조.",
+  "_comment": "v1.3 리밸런싱. 변경 요약: 흘려베기 speed 2→1, 일격필살 speed 4→3 (+ 적 균형 0이면 즉발 격상), 강타·돌진찌르기·봉휘두름에 blockPierceBonus 0.20, 견제에 debuff (다음 합 -50% 데미지 + 25% 빗나감), 흥정 goldGain 5→8, 행상에 팔매(stoneThrow) 신설.",
 
   "slash":        { "icon": "i-attack", "name": "베기",          "ranges": [1, 2],         "cost": 2, "type": "attack", "speed": 2, "hp": [3, 5],  "bal": [2, 3] },
-  "cleave":       { "icon": "i-attack", "name": "강타",          "ranges": [1, 2],         "cost": 3, "type": "attack", "speed": 3, "hp": [4, 7],  "bal": [3, 4] },
+  "cleave":       { "icon": "i-attack", "name": "강타",          "ranges": [1, 2],         "cost": 3, "type": "attack", "speed": 3, "hp": [4, 7],  "bal": [3, 4], "blockPierceBonus": 0.20 },
   "thrust":       { "icon": "i-thrust", "name": "찌르기",        "ranges": [2, 3],         "cost": 2, "type": "thrust", "speed": 1, "hp": [3, 4],  "bal": [1, 2] },
-  "lunge":        { "icon": "i-thrust", "name": "돌진찌르기",    "ranges": [2, 3, 4],      "cost": 4, "type": "thrust", "speed": 3, "hp": [5, 8],  "bal": [2, 3] },
-  "killingblow":  { "icon": "i-attack", "name": "일격필살",      "ranges": [1, 2],         "cost": 5, "type": "attack", "speed": 4, "hp": [9, 13], "bal": [4, 5], "limit": 1 },
+  "lunge":        { "icon": "i-thrust", "name": "돌진찌르기",    "ranges": [2, 3, 4],      "cost": 4, "type": "thrust", "speed": 3, "hp": [5, 8],  "bal": [2, 3], "blockPierceBonus": 0.20 },
+  "killingblow":  { "icon": "i-attack", "name": "일격필살",      "ranges": [1, 2],         "cost": 5, "type": "attack", "speed": 3, "hp": [9, 13], "bal": [4, 5], "limit": 1, "instantOnEnemyBalanceZero": true },
 
   "block":        { "icon": "i-block",  "name": "막기",          "ranges": [1, 2, 3],      "cost": 1, "type": "block",  "speed": 2 },
   "dodge":        { "icon": "i-dodge",  "name": "회피",          "ranges": "all",          "cost": 3, "type": "dodge",  "speed": 1 },
   "parry":        { "icon": "i-parry",  "name": "받아치기",      "ranges": [1, 2],         "cost": 2, "type": "parry",  "speed": 1, "counter": [2, 4] },
 
   "rest":         { "icon": "i-rest",   "name": "호흡 가다듬기", "ranges": "all",          "cost": 0, "type": "rest",   "speed": 4, "staGain": 4, "balGain": 5 },
-  "feint":        { "icon": "i-feint",  "name": "견제",          "ranges": "all",          "cost": 0, "type": "feint",  "speed": 3, "staGain": 2 },
+  "feint":        { "icon": "i-feint",  "name": "견제",          "ranges": "all",          "cost": 1, "type": "feint",  "speed": 3, "staGain": 2, "debuff": { "duration": 1, "damageMult": 0.5, "missChance": 0.25 } },
 
   "push":         { "icon": "i-push",   "name": "밀치기",        "ranges": [1],            "cost": 2, "type": "push",   "speed": 4, "bal": [6, 9] },
   "balancebreak": { "icon": "i-push",   "name": "균형깨기",      "ranges": [1, 2],         "cost": 3, "type": "push",   "speed": 4, "hp": [1, 2], "bal": [7, 10] },
 
-  "sliplash":     { "icon": "i-attack", "name": "흘려베기",      "ranges": [1, 2],         "cost": 3, "type": "attack", "speed": 2, "hp": [3, 5], "pierce": true },
+  "sliplash":     { "icon": "i-attack", "name": "흘려베기",      "ranges": [1, 2],         "cost": 3, "type": "attack", "speed": 1, "hp": [3, 5], "pierce": true },
   "iai":          { "icon": "i-thrust", "name": "발도술",        "ranges": [2, 3],         "cost": 5, "type": "attack", "speed": 0, "hp": [7, 11], "onHitBalDmg": 4 },
 
   "hwando":       { "icon": "i-attack", "name": "환도베기",      "ranges": [1, 2],         "cost": 2, "type": "attack", "speed": 2, "hp": [3, 5], "bal": [2, 3] },
@@ -25,6 +25,7 @@
   "ambush":       { "icon": "i-attack", "name": "급습",          "ranges": [1],            "cost": 4, "type": "attack", "speed": 0, "hp": [4, 7], "bonusOnAdvance": 0.6 },
 
   "staffstrike":  { "icon": "i-attack", "name": "봉타격",        "ranges": [1, 2],         "cost": 1, "type": "attack", "speed": 2, "hp": [2, 3], "bal": [2, 3] },
-  "staffsweep":   { "icon": "i-attack", "name": "봉 휘두름",     "ranges": [1, 2],         "cost": 3, "type": "attack", "speed": 3, "hp": [2, 3], "bal": [4, 6] },
-  "haggle":       { "icon": "i-feint",  "name": "흥정",          "ranges": "all",          "cost": 0, "type": "dodge",  "speed": 1, "goldGain": 5, "limit": 1 }
+  "staffsweep":   { "icon": "i-attack", "name": "봉 휘두름",     "ranges": [1, 2],         "cost": 3, "type": "attack", "speed": 3, "hp": [2, 3], "bal": [4, 6], "blockPierceBonus": 0.20 },
+  "haggle":       { "icon": "i-feint",  "name": "흥정",          "ranges": "all",          "cost": 0, "type": "dodge",  "speed": 1, "goldGain": 8, "limit": 1 },
+  "stoneThrow":   { "icon": "i-thrust", "name": "팔매",          "ranges": [2, 3],         "cost": 2, "type": "thrust", "speed": 0, "hp": [2, 3], "limit": 3 }
 }

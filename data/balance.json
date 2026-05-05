@@ -28,7 +28,18 @@
   },
   "combat": {
     "_comment": "speedDifferenceBlocks: true면 다른 우선순위일 때 빠른 쪽이 적중하고 느린 쪽은 무효. false면 등급 무시(옛 방식).",
+
     "speedDifferenceBlocks": true,
+
+    "blockPenetrationBySpeed": {
+      "0": 0.5,
+      "1": 0.35,
+      "2": 0.25,
+      "3": 0.45,
+      "4": 0.1
+    },
+
+    "defaultBlockPenetration": 0.25,
     "brokenBalanceMultiplier": 1.5,
     "brokenBalanceCostBlock": 4,
     "balanceRecoveryRatio": 0.3,
@@ -73,13 +84,7 @@
     "_comment": "검 놓침 시스템. chancePerTurn: 매 합 굴림 (0.005 = 0.5%). 보스전에선 자동 0. allowedCommands: 놓친 동안 사용 가능한 기예 (밀치기로 검을 다시 잡을 수 있음). recoveryCommand: 이걸 성공하면 검 회복.",
     "chancePerTurn": 0.005,
     "noDisarmVsBoss": true,
-    "allowedCommands": [
-      "push",
-      "dodge",
-      "rest",
-      "feint",
-      "balancebreak"
-    ],
+    "allowedCommands": ["push", "dodge", "rest", "feint", "balancebreak"],
     "recoveryCommand": "push"
   },
   "shop": {
