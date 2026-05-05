@@ -758,7 +758,7 @@ function renderClassSelect() {
         <div class="class-stat"><div class="class-stat-num">${c.bal}</div><div class="class-stat-label">균형</div></div>
         <div class="class-stat"><div class="class-stat-num">${c.sta}</div><div class="class-stat-label">기력</div></div>
         <div class="class-stat"><div class="class-stat-num">${(c.evade*100)|0}%</div><div class="class-stat-label">회피</div></div>
-        <div class="class-stat"><div class="class-stat-num">${c.gold}</div><div class="class-stat-label">금</div></div>
+        <div class="class-stat"><div class="class-stat-num">${BALANCE.startingGold}</div><div class="class-stat-label">금</div></div>
       </div>
       <div class="class-mech-tag">고유 능력</div>
       <div class="class-mech-name">${c.mechanic}</div>
@@ -778,7 +778,7 @@ function selectClass(id) {
     hp: c.hp, maxHp: c.hp,
     bal: c.bal, maxBal: c.bal,
     sta: c.sta, maxSta: 10,
-    gold: c.gold,
+    gold: BALANCE.startingGold,
     evade: c.evade,
   };
   game.deck = [...c.deck];
